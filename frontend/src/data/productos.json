@@ -1,0 +1,10 @@
+[
+{
+"id": "p-1",
+"nombre": "F300",
+"precioUSD": 2.70,
+"kgPorUnidad": 45,
+"stock": 25,
+"tipo": "fibra"
+}
+]
