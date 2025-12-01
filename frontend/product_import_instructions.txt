@@ -1,0 +1,110 @@
+CSV y SQL para importar productos, presentaciones y precios
+
+Contenido:
+
+1) products.csv (opcional — útil si aún no cargaste productos)
+sku,nombre,tipo,unidad_kg,descripcion
+PROD-001,Harina 000,Ingrediente,1,"Harina de trigo, uso panificador"
+PROD-002,Azúcar Refinada,Ingrediente,1,"Azúcar blanca refinada"
+PROD-003,Aceite Girasol,Liquido,1,"Aceite de girasol refinado"
+
+
+2) presentaciones.csv
+producto_sku,nombre,contenido_kg,unidad,codigo_interno,observaciones
+PROD-001,Bolsa 1 kg,1,kg,HF-1,"Presentación bolsa 1kg"
+PROD-001,Bolsa 25 kg,25,kg,HF-25,"Saco industrial 25kg"
+PROD-002,Bolsa 1 kg,1,kg,AZ-1,"Bolsa doméstica 1kg"
+PROD-003,Botella 1 L,0.92,L,AC-1,"Botella 1 litro (~0.92kg)"
+
+
+3) listas_precios.csv
+nombre,descripcion,moneda,activo
+Minorista,"Lista precio para ventas al público",USD,true
+Mayorista,"Lista precio para ventas al por mayor",USD,true
+Promocional,"Ofertas temporales",USD,true
+
+
+4) precios.csv
+lista_nombre,producto_sku,presentacion_nombre,precio,moneda,fecha_inicio,fecha_fin,activo
+Minorista,PROD-001,Bolsa 1 kg,0.70,USD,2025-01-01,2099-12-31,true
+Minorista,PROD-001,Bolsa 25 kg,15.00,USD,2025-01-01,2099-12-31,true
+Mayorista,PROD-001,Bolsa 25 kg,12.50,USD,2025-01-01,2099-12-31,true
+Minorista,PROD-002,Bolsa 1 kg,0.85,USD,2025-01-01,2099-12-31,true
+Minorista,PROD-003,Botella 1 L,2.20,USD,2025-01-01,2099-12-31,true
+Promocional,PROD-003,Botella 1 L,1.90,USD,2025-06-01,2025-06-30,true
+
+
+5) SQL de inserción (pega en el editor SQL de Supabase)
+-- 1) Insertar listas de precios (si no existen)
+INSERT INTO listas_precios (nombre, descripcion, moneda, activo, created_at)
+VALUES
+('Minorista','Lista precio para ventas al público','USD',true, NOW()),
+('Mayorista','Lista precio para ventas al por mayor','USD',true, NOW()),
+('Promocional','Ofertas temporales','USD',true, NOW())
+ON CONFLICT (nombre) DO NOTHING;
+
+-- 2) Insertar presentaciones usando SKU para resolver producto_id
+INSERT INTO presentaciones (producto_id, nombre, contenido_kg, unidad, codigo_interno, observaciones, created_at)
+SELECT p.id, tmp.nombre, tmp.contenido_kg::numeric, tmp.unidad, tmp.codigo_interno, tmp.observaciones, NOW()
+FROM (
+  VALUES
+    ('PROD-001','Bolsa 1 kg',1,'kg','HF-1','Presentación bolsa 1kg'),
+    ('PROD-001','Bolsa 25 kg',25,'kg','HF-25','Saco industrial 25kg'),
+    ('PROD-002','Bolsa 1 kg',1,'kg','AZ-1','Bolsa doméstica 1kg'),
+    ('PROD-003','Botella 1 L',0.92,'L','AC-1','Botella 1 litro (~0.92kg)')
+) AS tmp(producto_sku,nombre,contenido_kg,unidad,codigo_interno,observaciones)
+JOIN productos p ON p.sku = tmp.producto_sku
+ON CONFLICT DO NOTHING;
+
+-- 3) Insertar precios vinculando lista, producto y presentacion
+INSERT INTO precios_producto (producto_id, presentacion_id, lista_precio_id, precio, moneda, fecha_inicio, fecha_fin, activo, created_at)
+SELECT
+  p.id AS producto_id,
+  pr.id AS presentacion_id,
+  lp.id AS lista_precio_id,
+  tmp.precio::numeric AS precio,
+  tmp.moneda,
+  tmp.fecha_inicio::date,
+  tmp.fecha_fin::date,
+  tmp.activo::boolean,
+  NOW()
+FROM (
+  VALUES
+    ('Minorista','PROD-001','Bolsa 1 kg',0.70,'USD','2025-01-01','2099-12-31',true),
+    ('Minorista','PROD-001','Bolsa 25 kg',15.00,'USD','2025-01-01','2099-12-31',true),
+    ('Mayorista','PROD-001','Bolsa 25 kg',12.50,'USD','2025-01-01','2099-12-31',true),
+    ('Minorista','PROD-002','Bolsa 1 kg',0.85,'USD','2025-01-01','2099-12-31',true),
+    ('Minorista','PROD-003','Botella 1 L',2.20,'USD','2025-01-01','2099-12-31',true),
+    ('Promocional','PROD-003','Botella 1 L',1.90,'USD','2025-06-01','2025-06-30',true)
+) AS tmp(lista_nombre,producto_sku,presentacion_nombre,precio,moneda,fecha_inicio,fecha_fin,activo)
+JOIN productos p ON p.sku = tmp.producto_sku
+LEFT JOIN presentaciones pr ON pr.producto_id = p.id AND pr.nombre = tmp.presentacion_nombre
+LEFT JOIN listas_precios lp ON lp.nombre = tmp.lista_nombre
+ON CONFLICT DO NOTHING;
+
+
+6) Instrucciones rápidas para importar
+Opción A — Subir CSVs directamente por UI:
+1. Entra a Supabase → Database → Table Editor.
+2. Selecciona la tabla `productos` y usa "Import" → carga `products.csv` (mapea columnas).
+3. Repite para `presentaciones`, `listas_precios` y `precios_producto` (si vas a subir `precios.csv` directo, tendrías que incluir ids; por eso recomiendo usar el SQL de arriba que resuelve por `sku` y `nombre`).
+
+Opción B — Ejecutar SQL:
+1. Abre Supabase → SQL Editor.
+2. Pega el bloque SQL anterior (ajusta si tus columnas/tablas difieren).
+3. Ejecuta. Revisa errores en console y en las tablas.
+
+
+7) Verificaciones después de importar (ejecutar en SQL Editor)
+SELECT id, sku, nombre FROM productos LIMIT 10;
+SELECT id, producto_id, nombre, contenido_kg FROM presentaciones LIMIT 20;
+SELECT id, nombre FROM listas_precios;
+SELECT id, producto_id, presentacion_id, lista_precio_id, precio FROM precios_producto LIMIT 50;
+
+
+Notas y opciones adicionales:
+- Asumo que las tablas se llaman `productos`, `presentaciones`, `listas_precios`, `precios_producto`. Si tus nombres difieren, reemplázalos.
+- Si prefieres, puedo generar el SQL completo para crear las tablas desde cero y luego insertar los ejemplos.
+- Puedo también generar un archivo SQL combinado (creación + inserts) o versiones con separador `;` para Excel en español.
+
+Fin del archivo.

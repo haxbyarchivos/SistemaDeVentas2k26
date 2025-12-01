@@ -10,6 +10,7 @@ import Ventas from "../pages/Ventas";
 import Stock from "../pages/Stock";
 import Clientes from "../pages/Clientes";
 import Cotizar from "../pages/Cotizar";
+import Cotizar2 from "../pages/Cotizar2";
 import Configuracion from "../pages/Configuracion";
 
 export default function AppRoutes() {
@@ -77,6 +78,16 @@ export default function AppRoutes() {
             <ProtectedRoute>
               <Layout>
                 <Cotizar />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cotizar2"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Cotizar2 />
               </Layout>
             </ProtectedRoute>
           }

@@ -52,7 +52,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose = ()
     { label: "💸 Ventas", to: "/ventas" },
     { label: "📈 Stock", to: "/stock" },
     { label: "👤 Clientes", to: "/clientes" },
-    { label: "💲 Cotizar", to: "/cotizar" },
+    { label: "💲 Cotizar", to: "/cotizar2" },
     { label: "⚙️ Configuración", to: "/configuracion" },
   ];
 
