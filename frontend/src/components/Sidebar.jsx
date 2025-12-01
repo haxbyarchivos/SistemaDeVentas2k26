@@ -5,11 +5,39 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose = ()
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const [sessionTime, setSessionTime] = useState("0s");
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
+  // Calcular tiempo de sesión
+  useEffect(() => {
+    const loginTime = localStorage.getItem("loginTime");
+    if (!loginTime) {
+      localStorage.setItem("loginTime", new Date().getTime().toString());
+    }
+
+    const interval = setInterval(() => {
+      const login = parseInt(localStorage.getItem("loginTime") || "0");
+      const now = new Date().getTime();
+      const diff = Math.floor((now - login) / 1000);
+
+      let timeString = "";
+      if (diff < 60) {
+        timeString = `${diff}s`;
+      } else if (diff < 3600) {
+        timeString = `${Math.floor(diff / 60)}m ${diff % 60}s`;
+      } else {
+        timeString = `${Math.floor(diff / 3600)}h ${Math.floor((diff % 3600) / 60)}m`;
+      }
+      setSessionTime(timeString);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("loginTime");
     navigate("/", { replace: true });
   };
 
@@ -139,8 +167,12 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose = ()
         style={{
           borderTop: "1px solid #333",
           padding: "15px 20px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "15px",
         }}
       >
+        {/* INFORMACIÓN DE USUARIO */}
         {!collapsed && !isMobile && (
           <div style={{ marginBottom: "12px", color: "#999", fontSize: "12px" }}>
             <p style={{ margin: "0 0 6px 0" }}>Usuario:</p>
@@ -158,6 +190,27 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose = ()
           </div>
         )}
 
+        {/* TIEMPO DE SESIÓN */}
+        {!collapsed && (
+          <div
+            style={{
+              backgroundColor: "#222",
+              padding: "10px",
+              borderRadius: "5px",
+              fontSize: "12px",
+              color: "#999",
+              textAlign: "center",
+              borderLeft: "2px solid #4da6ff",
+            }}
+          >
+            <p style={{ margin: "0 0 5px 0", fontSize: "11px" }}>Sesión activa:</p>
+            <p style={{ margin: 0, color: "#4da6ff", fontWeight: "bold", fontSize: "14px" }}>
+              {sessionTime}
+            </p>
+          </div>
+        )}
+
+        {/* BOTÓN LOGOUT */}
         <button
           onClick={handleLogout}
           style={{
@@ -178,6 +231,27 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose = ()
         >
           {collapsed && !isMobile ? "🚪" : "Cerrar Sesión"}
         </button>
+
+        {/* INFORMACIÓN DEL SISTEMA */}
+        {!collapsed && (
+          <div
+            style={{
+              backgroundColor: "#1a1a1a",
+              padding: "10px",
+              borderRadius: "5px",
+              fontSize: "11px",
+              color: "#666",
+              borderTop: "1px solid #333",
+              paddingTop: "12px",
+              textAlign: "center",
+              lineHeight: "1.5",
+            }}
+          >
+            <p style={{ margin: "0 0 3px 0", fontWeight: "bold", color: "#999" }}>Sistema de Ventas</p>
+            <p style={{ margin: 0 }}>v1.0.0</p>
+            <p style={{ margin: "3px 0 0 0", fontSize: "10px", color: "#555" }}>© 2K26</p>
+          </div>
+        )}
       </div>
     </div>
   );
