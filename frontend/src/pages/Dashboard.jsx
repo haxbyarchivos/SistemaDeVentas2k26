@@ -24,13 +24,13 @@ export default function Dashboard() {
   return (
     <div
       style={{
-        padding: "40px",
+        padding: "20px",
         color: "white",
         minHeight: "100vh",
         backgroundColor: "#0a0a0a",
       }}
     >
-      <h1 style={{ fontSize: "32px", marginBottom: "10px" }}>Bienvenido, {user.username}!</h1>
+      <h1 style={{ fontSize: "clamp(24px, 8vw, 32px)", marginBottom: "10px" }}>Bienvenido, {user.username}!</h1>
       <p style={{ color: "#999", fontSize: "16px", marginBottom: "40px" }}>
         {new Date().toLocaleDateString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
       </p>

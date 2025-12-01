@@ -140,13 +140,13 @@ export default function Configuracion() {
   return (
     <div
       style={{
-        padding: '40px',
-        color: 'white',
-        minHeight: '100vh',
-        backgroundColor: '#0a0a0a',
+        padding: "20px",
+        color: "white",
+        minHeight: "100vh",
+        backgroundColor: "#0a0a0a",
       }}
     >
-      <h1 style={{ marginBottom: '30px' }}>Configuración</h1>
+      <h1 style={{ marginBottom: "30px", fontSize: "clamp(24px, 8vw, 32px)" }}>Configuración</h1>
 
       {/* CONTENEDOR PRINCIPAL */}
       <div
