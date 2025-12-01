@@ -1,51 +1,74 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import supabase from "../utils/supabaseClient";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
-  // Si ya hay usuario en localStorage, redirijo al dashboard
+  // Si ya hay sesión en Supabase, redirijo al dashboard
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (stored) {
-      navigate("/dashboard", { replace: true });
-    }
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/dashboard", { replace: true });
+      }
+    };
+    checkSession();
   }, [navigate]);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
     if (!username || !password) {
       setError("Completa todos los campos");
+      setLoading(false);
       return;
     }
 
-    // Mock de usuarios
-    // admin -> role admin, cualquier otro -> cajero (esto lo podés cambiar después)
-    const usuarios = [
-      { username: "admin", password: "1234", role: "admin" },
-      { username: "cajero", password: "1234", role: "cajero" },
-      { username: "haxby", password: "1234", role: "admin" },
-    ];
+    try {
+      // Buscar usuario en la tabla 'usuarios'
+      const { data: usuarios, error: searchError } = await supabase
+        .from("usuarios")
+        .select("id, username, password, role")
+        .eq("username", username)
+        .single();
 
-    const found = usuarios.find(
-      (u) => u.username === username && u.password === password
-    );
+      if (searchError || !usuarios) {
+        setError("Usuario o contraseña incorrectos");
+        setLoading(false);
+        return;
+      }
 
-    if (!found) {
-      setError("Usuario o contraseña incorrectos");
-      return;
+      // Validar contraseña
+      if (usuarios.password !== password) {
+        setError("Usuario o contraseña incorrectos");
+        setLoading(false);
+        return;
+      }
+
+      // Guardar sesión en localStorage con datos del usuario
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          id: usuarios.id,
+          username: usuarios.username,
+          role: usuarios.role,
+        })
+      );
+
+      // Redirigir al dashboard
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError("Error al iniciar sesión: " + err.message);
+      setLoading(false);
     }
-
-    // Guardar sesión (localStorage)
-    localStorage.setItem("user", JSON.stringify({ username: found.username, role: found.role }));
-
-    // Redirigir al dashboard
-    navigate("/dashboard", { replace: true });
   };
 
   return (
@@ -79,6 +102,7 @@ export default function Login() {
             placeholder="Usuario"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            disabled={loading}
             style={{
               width: "100%",
               marginBottom: "10px",
@@ -87,6 +111,8 @@ export default function Login() {
               border: "none",
               backgroundColor: "#222",
               color: "white",
+              opacity: loading ? 0.6 : 1,
+              cursor: loading ? "not-allowed" : "text",
             }}
           />
 
@@ -95,6 +121,7 @@ export default function Login() {
             placeholder="Contraseña"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
             style={{
               width: "100%",
               marginBottom: "10px",
@@ -103,6 +130,8 @@ export default function Login() {
               border: "none",
               backgroundColor: "#222",
               color: "white",
+              opacity: loading ? 0.6 : 1,
+              cursor: loading ? "not-allowed" : "text",
             }}
           />
 
@@ -110,19 +139,21 @@ export default function Login() {
 
           <button
             type="submit"
+            disabled={loading}
             style={{
               width: "100%",
               padding: "10px",
               marginTop: "10px",
-              cursor: "pointer",
-              backgroundColor: "#fff",
+              cursor: loading ? "not-allowed" : "pointer",
+              backgroundColor: loading ? "#888" : "#fff",
               color: "#000",
               fontWeight: "bold",
               borderRadius: "5px",
               border: "none",
+              opacity: loading ? 0.7 : 1,
             }}
           >
-            Ingresar
+            {loading ? "Ingresando..." : "Ingresar"}
           </button>
         </form>
       </div>
