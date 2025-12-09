@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import supabase from "../utils/supabaseClient";
+import { CardSpotlight } from "../components/ui/card-spotlight";
+
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -75,28 +77,35 @@ export default function Login() {
     <div
       style={{
         minHeight: "100vh",
-        width: "100vw",
+        minWidth: "100vw",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#000",
         margin: 0,
         padding: 0,
+        overflow: "hidden",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
       }}
     >
-      <div
-        style={{
-          padding: "40px",
-          borderRadius: "8px",
-          backgroundColor: "#111",
-          width: "320px",
-          textAlign: "center",
-          color: "white",
-        }}
-      >
-        <h1 style={{ marginBottom: "20px" }}>Login</h1>
+      {/* Formulario de login con efecto spotlight */}
+      <CardSpotlight style={{ width: "90%", maxWidth: "380px", padding: 0 }}>
+        <div
+          style={{
+            padding: "40px",
+            textAlign: "center",
+            color: "white",
+            position: "relative",
+            zIndex: 20,
+          }}
+        >
+          <h1 style={{ marginBottom: "20px" }}>Login</h1>
 
-        <form onSubmit={handleLogin}>
+          <form onSubmit={handleLogin}>
           <input
             type="text"
             placeholder="Usuario"
@@ -113,6 +122,8 @@ export default function Login() {
               color: "white",
               opacity: loading ? 0.6 : 1,
               cursor: loading ? "not-allowed" : "text",
+              position: "relative",
+              zIndex: 20,
             }}
           />
 
@@ -132,10 +143,12 @@ export default function Login() {
               color: "white",
               opacity: loading ? 0.6 : 1,
               cursor: loading ? "not-allowed" : "text",
+              position: "relative",
+              zIndex: 20,
             }}
           />
 
-          {error && <p style={{ color: "tomato", margin: "6px 0" }}>{error}</p>}
+          {error && <p style={{ color: "tomato", margin: "6px 0", position: "relative", zIndex: 20 }}>{error}</p>}
 
           <button
             type="submit"
@@ -151,12 +164,15 @@ export default function Login() {
               borderRadius: "5px",
               border: "none",
               opacity: loading ? 0.7 : 1,
+              position: "relative",
+              zIndex: 20,
             }}
           >
             {loading ? "Ingresando..." : "Ingresar"}
           </button>
         </form>
-      </div>
+        </div>
+      </CardSpotlight>
     </div>
   );
 }

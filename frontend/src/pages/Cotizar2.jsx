@@ -72,6 +72,11 @@ export default function Cotizar2(){
 				.eq('key','valor_dolar')
 				.maybeSingle()
 			if(configData) setValorDolar(configData.value)
+			
+			// Cargar lista general por defecto
+			const listaGeneralId = '12989162-fdb2-4532-a893-5107b4c1cffb'
+			setSelectedListaPrecioId(listaGeneralId)
+			loadPreciosDeLista(listaGeneralId)
 		}
 		fetchData()
 	},[])
@@ -307,6 +312,16 @@ export default function Cotizar2(){
 
 	function totalARS(){
 		return totalUSD() * (Number(valorDolar) || 0)
+	}
+
+	function totalKilos(){
+		return items.reduce((sum, it) => {
+			// Solo sumar kilos de productos que NO son por unidad (no son ceras)
+			if(!esProductoPorUnidad(it.producto_nombre)){
+				return sum + it.kilos
+			}
+			return sum
+		}, 0)
 	}
 
 	function formatARS(value){
@@ -763,15 +778,14 @@ export default function Cotizar2(){
 					)}
 				</div>
 
-				{/* Totales */}
-				{items.length > 0 && (
-					<div style={{display:'flex', justifyContent:'flex-end', gap:20, padding:'12px', backgroundColor:'#1a1a1a', borderRadius:'8px', border:'1px solid #333'}}>
-						<div className='title' style={{fontSize:'16px', color:'#fff'}}>USD: ${totalUSD().toFixed(2)}</div>
-						<div className='title' style={{fontSize:'16px', color:'#4da6ff'}}>ARS: ${formatARS(totalARS())}</div>
-					</div>
-				)}
-
-				{/* Botones de acción */}
+			{/* Totales */}
+			{items.length > 0 && (
+				<div style={{display:'flex', justifyContent:'flex-end', gap:20, padding:'12px', backgroundColor:'#1a1a1a', borderRadius:'8px', border:'1px solid #333'}}>
+					<div className='title' style={{fontSize:'16px', color:'#f39c12'}}>Kg: {formatKilos(totalKilos())}</div>
+					<div className='title' style={{fontSize:'16px', color:'#fff'}}>USD: ${totalUSD().toFixed(2)}</div>
+					<div className='title' style={{fontSize:'16px', color:'#4da6ff'}}>ARS: ${formatARS(totalARS())}</div>
+				</div>
+			)}				{/* Botones de acción */}
 				{items.length > 0 && (
 					<div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
 						<button className='btn' onClick={guardarVenta}>💾 Guardar venta</button>
