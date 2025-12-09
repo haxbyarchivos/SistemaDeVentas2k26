@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import SalesCard from "../components/SalesCard";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -36,8 +37,25 @@ export default function Dashboard() {
       </p>
 
       {/* Aquí irán los gráficos y resúmenes */}
-      <div style={{ marginTop: "30px" }}>
-        {/* Placeholder para gráficos */}
+      <div style={{ marginTop: "30px", display: "flex", gap: "20px", flexWrap: "wrap" }}>
+        <SalesCard 
+          title="Ventas del Día" 
+          value="$12,500" 
+          percent="15%" 
+          fillPercent={60}
+        />
+        <SalesCard 
+          title="Ventas Semanales" 
+          value="$85,300" 
+          percent="22%" 
+          fillPercent={76}
+        />
+        <SalesCard 
+          title="Ventas Mensuales" 
+          value="$324,800" 
+          percent="18%" 
+          fillPercent={85}
+        />
       </div>
     </div>
   );
