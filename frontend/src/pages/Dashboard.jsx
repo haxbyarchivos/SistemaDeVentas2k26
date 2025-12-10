@@ -198,7 +198,7 @@ export default function Dashboard() {
       {/* Aquí irán los gráficos y resúmenes */}
       <div style={{ marginTop: "30px", display: "flex", gap: "20px", flexWrap: "wrap" }}>
         <SalesCard 
-          title="Ventas del Día" 
+          title="Ventas del Día   " 
           value={`$${formatARS(ventasDia)}`}
           percent={`${porcentajeDia >= 0 ? '+' : ''}${porcentajeDia.toFixed(1)}%`}
           fillPercent={calcularFillPercent('dia')}
