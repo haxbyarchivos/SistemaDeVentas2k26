@@ -117,6 +117,7 @@ const StyledWrapper = styled.div`
   .title {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
   }
 
   .title span {
@@ -128,6 +129,7 @@ const StyledWrapper = styled.div`
     border-radius: 50%;
     box-shadow: 0 3px 8px rgba(16, 185, 129, 0.35);
     animation: pulse 2.4s ease-in-out infinite;
+    flex-shrink: 0;
   }
 
   .title span svg {
@@ -145,6 +147,9 @@ const StyledWrapper = styled.div`
     font-size: 19px;
     font-weight: 600;
     letter-spacing: -0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .percent {
@@ -153,12 +158,15 @@ const StyledWrapper = styled.div`
     font-weight: 600;
     display: flex;
     font-size: 15px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .data {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: space-between;
+    flex: 1;
   }
 
   .data p {
@@ -172,6 +180,7 @@ const StyledWrapper = styled.div`
     letter-spacing: -0.03em;
     opacity: 0;
     animation: fadeIn 0.8s ease forwards 0.3s;
+    flex-shrink: 0;
   }
 
   .data .range {
