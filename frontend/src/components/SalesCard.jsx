@@ -95,6 +95,8 @@ const StyledWrapper = styled.div`
     animation: cardFadeUp 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   @media (max-width: 768px) {
@@ -102,7 +104,7 @@ const StyledWrapper = styled.div`
       width: 100%;
       min-width: 280px;
       max-width: 340px;
-      height: 180px;
+      height: 180px !important;
     }
   }
 
