@@ -188,6 +188,9 @@ export default function Dashboard() {
         color: "white",
         minHeight: "100vh",
         backgroundColor: "#0a0a0a",
+        maxWidth: "100vw",
+        overflowX: "hidden",
+        boxSizing: "border-box"
       }}
     >
       <h1 style={{ fontSize: "clamp(24px, 8vw, 32px)", marginBottom: "10px" }}>Bienvenido, {user.username}!</h1>
@@ -196,7 +199,14 @@ export default function Dashboard() {
       </p>
 
       {/* Aquí irán los gráficos y resúmenes */}
-      <div style={{ marginTop: "30px", display: "flex", gap: "20px", flexWrap: "wrap" }}>
+      <div style={{ 
+        marginTop: "30px", 
+        display: "flex", 
+        gap: "20px", 
+        flexWrap: "wrap",
+        justifyContent: "center",
+        alignItems: "stretch"
+      }}>
         <SalesCard 
           title="Ventas del Día   " 
           value={`$${formatARS(ventasDia)}`}
