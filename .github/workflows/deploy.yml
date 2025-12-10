@@ -34,5 +34,5 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./frontend/dist/   # carpeta generada por Vite
-          server-dir: /htdocs          # carpeta pública en InfinityFree
+          server-dir: /htdocs/          # carpeta pública en InfinityFree
 
