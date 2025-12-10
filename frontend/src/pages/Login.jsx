@@ -127,7 +127,7 @@ export default function Login() {
             type="text"
             placeholder="Usuario"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(e) => setUsername(e.target.value.replace(/\s/g, ''))}
             disabled={loading}
             style={{
               width: "100%",
@@ -148,7 +148,7 @@ export default function Login() {
             type="password"
             placeholder="Contraseña"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => setPassword(e.target.value.replace(/\s/g, ''))}
             disabled={loading}
             style={{
               width: "100%",

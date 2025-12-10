@@ -78,10 +78,15 @@ export default function Stock(){
 			
 			if (stockData) setProductosStock(stockData)
 
-			// Cargar últimos movimientos
+			// Cargar últimos movimientos con información del producto
 			const { data: movData } = await supabase
 				.from('movimientos_stock')
-				.select('*')
+				.select(`
+					*,
+					productos (
+						nombre
+					)
+				`)
 				.order('created_at', { ascending: false })
 				.limit(50)
 			
@@ -138,6 +143,92 @@ export default function Stock(){
 		} catch (err) {
 			console.error('Error:', err)
 			alert('Error al actualizar stock mínimo')
+		}
+	}
+
+	async function consolidarMovimientos() {
+		if (!window.confirm('¿Estás seguro de consolidar todo el historial de movimientos?\n\nEsto eliminará todos los movimientos antiguos y creará un solo registro por producto.\nEl stock actual NO cambiará.')) {
+			return
+		}
+
+		try {
+			// Obtener todos los productos con stock
+			const { data: productos, error: errorProd } = await supabase
+				.from('productos')
+				.select('id, nombre, stock')
+
+			if (errorProd) throw errorProd
+
+			if (!productos || productos.length === 0) {
+				alert('No hay productos para consolidar')
+				return
+			}
+
+			let consolidados = 0
+			let errores = 0
+			const total = productos.length
+
+			// Mostrar progreso inicial
+			console.log(`🗜️ Iniciando consolidación de ${total} productos...`)
+
+			for (let i = 0; i < productos.length; i++) {
+				const prod = productos[i]
+				
+				// Mostrar progreso cada 5 productos
+				if ((i + 1) % 5 === 0 || i === productos.length - 1) {
+					console.log(`📦 Procesando: ${i + 1}/${total} - ${prod.nombre}`)
+				}
+
+				try {
+					// Primero crear el movimiento consolidado
+					const { error: errorInsert } = await supabase
+						.from('movimientos_stock')
+						.insert({
+							producto_id: prod.id,
+							tipo: 'consolidacion',
+							cantidad: prod.stock || 0,
+							created_at: new Date().toISOString(),
+							observaciones: `Consolidación de historial - Stock actual: ${prod.stock || 0}kg`
+						})
+
+					if (errorInsert) {
+						console.error(`❌ Error creando consolidación de ${prod.nombre}:`, errorInsert)
+						errores++
+						continue
+					}
+
+					// Después eliminar todos los movimientos anteriores EXCEPTO el que acabamos de crear
+					const { error: errorDelete } = await supabase
+						.from('movimientos_stock')
+						.delete()
+						.eq('producto_id', prod.id)
+						.neq('tipo', 'consolidacion')
+
+					if (errorDelete) {
+						console.error(`❌ Error eliminando movimientos antiguos de ${prod.nombre}:`, errorDelete)
+						errores++
+						continue
+					}
+
+					consolidados++
+				} catch (err) {
+					console.error(`❌ Error procesando ${prod.nombre}:`, err)
+					errores++
+				}
+			}
+
+			console.log(`✅ Consolidación finalizada: ${consolidados}/${total} productos`)
+
+			if (errores > 0) {
+				alert(`⚠️ Consolidación completada con errores\n\nProductos consolidados: ${consolidados}\nErrores: ${errores}\n\nRevisa la consola para más detalles`)
+			} else {
+				alert(`✓ Historial consolidado exitosamente\n${consolidados} productos procesados`)
+			}
+			
+			cargarStock()
+		} catch (err) {
+			console.error('Error consolidando:', err)
+			alert('Error al consolidar historial: ' + err.message)
 		}
 	}
 
@@ -218,13 +309,10 @@ export default function Stock(){
 			const movimiento = {
 				tipo: modalAbierto,
 				producto_id: selectedProductId,
-				producto_nombre: producto.nombre,
 				presentacion_id: selectedPresentacionId,
-				presentacion_nombre: presentacion?.nombre,
 				cantidad: cantidadEnKg,
-				stock_anterior: stockAnterior,
-				stock_nuevo: stockNuevo,
-				created_at: new Date().toISOString()
+				created_at: new Date().toISOString(),
+				observaciones: `${modalAbierto === 'ingreso' ? 'Ingreso' : 'Egreso'} manual: ${cantidad} ${presentacion.nombre} (${cantidadEnKg.toFixed(2)}kg)`
 			}
 
 			const { error: insertError } = await supabase
@@ -309,112 +397,148 @@ export default function Stock(){
 			subtitle="Movimientos e inventario"
 			footer={<Link to='/dashboard' className='back-link'>Volver</Link>}
 		>
-			<div style={{display:'flex', gap:8, marginBottom:12}}>
-				<button className='btn' onClick={() => abrirModal('ingreso')}>Ingreso manual</button>
-				<button className='btn' onClick={() => abrirModal('egreso')}>Egreso manual</button>
+		<div style={{display:'flex', gap:8, marginBottom:12}}>
+			<button className='btn' onClick={() => abrirModal('ingreso')}>Ingreso manual</button>
+			<button className='btn' onClick={() => abrirModal('egreso')}>Egreso manual</button>
+			<button 
+				className='btn' 
+				onClick={consolidarMovimientos}
+				style={{ marginLeft: 'auto', backgroundColor: '#f59e0b' }}
+				title="Consolida todo el historial de movimientos en un solo registro por producto"
+			>
+				🗜️ Consolidar historial
+			</button>
+		</div>
+
+		<div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+			{/* Columna izquierda: Stock de productos */}
+			<div style={{ flex: '1 1 50%', minWidth: 0 }}>
+				<h3 style={{ fontSize: '16px', marginBottom: '12px', color: '#fff' }}>Stock de Productos</h3>
+				{loading ? (
+					<div className='small'>Cargando stock...</div>
+				) : (
+					<table className='table' style={{ marginBottom: '30px' }}>
+						<thead>
+							<tr>
+								<th>Producto</th>
+								<th>Stock actual</th>
+								<th>Stock mínimo</th>
+								<th>Estado</th>
+								<th>Acciones</th>
+							</tr>
+						</thead>
+						<tbody>
+							{productosStock.length === 0 ? (
+								<tr>
+									<td colSpan={5} className='small'>No hay productos con stock</td>
+								</tr>
+							) : (
+								productosStock.map(prod => {
+									const stock = prod.stock || 0
+									const stockMinimo = prod.stock_minimo || 10
+									const esAlerta = stock < stockMinimo
+									return (
+										<tr key={prod.id}>
+											<td>{prod.nombre}</td>
+											<td>{stock.toFixed(2)} kg</td>
+											<td>{stockMinimo.toFixed(0)} kg</td>
+											<td>
+												{esAlerta ? (
+													<span style={{ color: '#ef4444', fontWeight: 'bold' }}>⚠️ Stock bajo</span>
+												) : (
+													<span style={{ color: '#10b981' }}>✓ OK</span>
+												)}
+											</td>
+											<td>
+												<button 
+													className='btn btn-ghost' 
+													onClick={() => abrirModalConfig(prod)}
+													style={{ padding: '4px 8px', fontSize: '12px' }}
+												>
+													⚙️ Configurar
+												</button>
+											</td>
+										</tr>
+									)
+								})
+							)}
+						</tbody>
+					</table>
+				)}
 			</div>
 
-			<h3 style={{ fontSize: '16px', marginBottom: '12px', color: '#fff' }}>Stock de Productos</h3>
-			{loading ? (
-				<div className='small'>Cargando stock...</div>
-			) : (
-				<table className='table' style={{ marginBottom: '30px' }}>
-					<thead>
-						<tr>
-							<th>Producto</th>
-							<th>Stock actual</th>
-							<th>Stock mínimo</th>
-							<th>Estado</th>
-							<th>Acciones</th>
-						</tr>
-					</thead>
-					<tbody>
-						{productosStock.length === 0 ? (
+			{/* Columna derecha: Últimos movimientos */}
+			<div style={{ flex: '1 1 50%', minWidth: 0 }}>
+				<h3 style={{ fontSize: '16px', marginBottom: '12px', color: '#fff' }}>Últimos Movimientos</h3>
+				<div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+					<table className='table' style={{ fontSize: '12px' }}>
+						<thead style={{ position: 'sticky', top: 0, backgroundColor: '#1a1a1a', zIndex: 1 }}>
 							<tr>
-								<td colSpan={5} className='small'>No hay productos con stock</td>
+								<th style={{ padding: '8px 6px' }}>Fecha</th>
+								<th style={{ padding: '8px 6px' }}>Tipo</th>
+								<th style={{ padding: '8px 6px' }}>Producto</th>
+								<th style={{ padding: '8px 6px' }}>Cantidad</th>
+								<th style={{ padding: '8px 6px' }}>Observaciones</th>
 							</tr>
-						) : (
-							productosStock.map(prod => {
-								const stock = prod.stock || 0
-								const stockMinimo = prod.stock_minimo || 10
-								const esAlerta = stock < stockMinimo
-								return (
-									<tr key={prod.id}>
-										<td>{prod.nombre}</td>
-										<td>{stock.toFixed(2)} kg</td>
-										<td>{stockMinimo.toFixed(0)} kg</td>
-										<td>
-											{esAlerta ? (
-												<span style={{ color: '#ef4444', fontWeight: 'bold' }}>⚠️ Stock bajo</span>
-											) : (
-												<span style={{ color: '#10b981' }}>✓ OK</span>
-											)}
+						</thead>
+						<tbody>
+							{movimientos.length === 0 ? (
+								<tr>
+									<td colSpan={5} className='small'>No hay movimientos registrados</td>
+								</tr>
+							) : (
+								movimientos.map(mov => (
+									<tr key={mov.id}>
+										<td style={{ padding: '6px', fontSize: '11px' }}>
+											{new Date(mov.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })} {new Date(mov.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
 										</td>
-										<td>
-											<button 
-												className='btn btn-ghost' 
-												onClick={() => abrirModalConfig(prod)}
-												style={{ padding: '4px 8px', fontSize: '12px' }}
-											>
-												⚙️ Configurar
-											</button>
+										<td style={{ padding: '6px' }}>
+											<span style={{
+												padding: '3px 6px',
+												borderRadius: '3px',
+												fontSize: '10px',
+												fontWeight: 'bold',
+												backgroundColor: 
+													mov.tipo === 'ingreso' ? '#10b981' : 
+													mov.tipo === 'egreso' ? '#ef4444' : 
+													mov.tipo === 'consolidacion' ? '#8b5cf6' :
+													'#f59e0b',
+												color: 'white',
+												display: 'inline-block',
+												whiteSpace: 'nowrap'
+											}}>
+												{mov.tipo === 'ingreso' ? 'ING' : 
+												 mov.tipo === 'egreso' ? 'EGR' :
+												 mov.tipo === 'consolidacion' ? 'CONS' :
+												 mov.tipo === 'venta' ? 'VTA' : 'DEV'}
+											</span>
+										</td>
+										<td style={{ padding: '6px', fontSize: '11px', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+											{mov.productos?.nombre || 'N/D'}
+										</td>
+										<td style={{ 
+											padding: '6px',
+											fontSize: '11px',
+											color: mov.cantidad < 0 ? '#ef4444' : '#10b981',
+											fontWeight: 'bold',
+											whiteSpace: 'nowrap'
+										}}>
+											{mov.cantidad > 0 ? '+' : ''}{mov.cantidad.toFixed(2)}
+										</td>
+										<td style={{ padding: '6px', fontSize: '10px', color: '#999', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+											{mov.observaciones || '-'}
 										</td>
 									</tr>
-								)
-							})
-						)}
-					</tbody>
-				</table>
-			)}
-
-			<h3 style={{ fontSize: '16px', marginBottom: '12px', color: '#fff' }}>Últimos Movimientos</h3>
-			<table className='table'>
-				<thead>
-					<tr>
-						<th>Fecha</th>
-						<th>Tipo</th>
-						<th>Producto</th>
-						<th>Cantidad</th>
-						<th>Stock anterior</th>
-						<th>Stock nuevo</th>
-					</tr>
-				</thead>
-				<tbody>
-					{movimientos.length === 0 ? (
-						<tr>
-							<td colSpan={6} className='small'>No hay movimientos registrados</td>
-						</tr>
-					) : (
-						movimientos.map(mov => (
-							<tr key={mov.id}>
-								<td>{new Date(mov.created_at).toLocaleDateString('es-AR')} {new Date(mov.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</td>
-								<td>
-									<span style={{
-										padding: '4px 8px',
-										borderRadius: '4px',
-										fontSize: '11px',
-										fontWeight: 'bold',
-										backgroundColor: mov.tipo === 'ingreso' ? '#10b981' : mov.tipo === 'egreso' ? '#ef4444' : '#f59e0b',
-										color: 'white'
-									}}>
-										{mov.tipo.toUpperCase()}
-									</span>
-								</td>
-								<td>{mov.producto_nombre}</td>
-								<td>{mov.cantidad.toFixed(2)} kg</td>
-								<td>{mov.stock_anterior?.toFixed(2) || 0} kg</td>
-								<td>{mov.stock_nuevo?.toFixed(2) || 0} kg</td>
-							</tr>
-						))
-					)}
-				</tbody>
-			</table>
-
-			<div className='comment'>
-				💡 Los movimientos automáticos por ventas se registrarán cuando cambies el estado a "vendido"
+								))
+							)}
+						</tbody>
+					</table>
+				</div>
+				<div className='comment' style={{ marginTop: '8px', fontSize: '11px' }}>
+					💡 Los movimientos automáticos por ventas se registrarán cuando cambies el estado a "vendido"
+				</div>
 			</div>
-
-			{/* Modal de ingreso/egreso */}
+		</div>			{/* Modal de ingreso/egreso */}
 			{modalAbierto && (
 				<div
 					style={{

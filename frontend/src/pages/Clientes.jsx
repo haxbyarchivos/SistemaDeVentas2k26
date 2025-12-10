@@ -7,21 +7,38 @@ import supabase from "../utils/supabaseClient.js";
 
 export default function Clientes() {
   const [clientes, setClientes] = useState([]);
+  const [listas, setListas] = useState([]);
   const [modo, setModo] = useState(null);
   const [form, setForm] = useState({
     id: null,
     nombre: "",
     telefono: "",
     direccion: "",
-    rubro: ""
+    rubro: "",
+    lista_precio_id: null
   });
 
   const fileInputRef = useRef(null);
 
-  // CARGAR CLIENTES DESDE SUPABASE
+  // CARGAR CLIENTES Y LISTAS DESDE SUPABASE
   useEffect(() => {
     cargarClientes();
+    cargarListas();
   }, []);
+
+  const cargarListas = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('listas_precios')
+        .select('*')
+        .order('nombre');
+
+      if (error) throw error;
+      setListas(data || []);
+    } catch (err) {
+      console.error('Error cargando listas:', err);
+    }
+  };
 
   const cargarClientes = async () => {
   try {
@@ -67,7 +84,7 @@ export default function Clientes() {
   // AGREGAR / EDITAR
   const abrirAgregar = () => {
     setModo("agregar");
-    setForm({ id: null, nombre: "", telefono: "", direccion: "", rubro: "" });
+    setForm({ id: null, nombre: "", telefono: "", direccion: "", rubro: "", lista_precio_id: null });
   };
 
   const abrirEditar = (c) => {
@@ -89,7 +106,8 @@ export default function Clientes() {
             nombre: form.nombre,
             telefono: form.telefono,
             direccion: form.direccion,
-            rubro: form.rubro
+            rubro: form.rubro,
+            lista_precio_id: form.lista_precio_id
           }
         ])
         .select(); // pedir que devuelva el registro insertado
@@ -99,7 +117,7 @@ export default function Clientes() {
       // data es un array con el/los registros insertados (con id generado)
       setClientes(prev => [...prev, ...data]);
       setModo(null);
-      setForm({ id: null, nombre: "", telefono: "", direccion: "", rubro: "" });
+      setForm({ id: null, nombre: "", telefono: "", direccion: "", rubro: "", lista_precio_id: null });
       return;
     }
 
@@ -114,7 +132,8 @@ export default function Clientes() {
         nombre: form.nombre,
         telefono: form.telefono,
         direccion: form.direccion,
-        rubro: form.rubro
+        rubro: form.rubro,
+        lista_precio_id: form.lista_precio_id
       })
       .eq("id", idToUpdate)
       .select();
@@ -131,7 +150,7 @@ export default function Clientes() {
     }
 
     setModo(null);
-    setForm({ id: null, nombre: "", telefono: "", direccion: "", rubro: "" });
+    setForm({ id: null, nombre: "", telefono: "", direccion: "", rubro: "", lista_precio_id: null });
   } catch (err) {
     console.error("Error en guardar():", err);
     alert("Error guardando en la base de datos. Revisá la consola para más detalles.");
@@ -243,26 +262,31 @@ export default function Clientes() {
             <th>Teléfono</th>
             <th>Dirección</th>
             <th>Rubro</th>
+            <th>Lista de Precios</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
           {clientes.length === 0 ? (
-            <tr><td colSpan={5}>No hay clientes.</td></tr>
+            <tr><td colSpan={6}>No hay clientes.</td></tr>
           ) : (
-            clientes.map((c) => (
-              <tr key={c.id}>
-                <td>{c.nombre}</td>
-                <td>{c.telefono}</td>
-                <td>{c.direccion}</td>
-                <td>{c.rubro}</td>
-                <td>
-                  <button className="btn-small" onClick={() => abrirEditar(c)}>
-                    Editar
-                  </button>
-                </td>
-              </tr>
-            ))
+            clientes.map((c) => {
+              const lista = listas.find(l => l.id === c.lista_precio_id);
+              return (
+                <tr key={c.id}>
+                  <td>{c.nombre}</td>
+                  <td>{c.telefono}</td>
+                  <td>{c.direccion}</td>
+                  <td>{c.rubro}</td>
+                  <td>{lista ? lista.nombre : 'Sin asignar'}</td>
+                  <td>
+                    <button className="btn-small" onClick={() => abrirEditar(c)}>
+                      Editar
+                    </button>
+                  </td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>
@@ -296,6 +320,20 @@ export default function Clientes() {
               value={form.rubro}
               onChange={(e) => setForm({ ...form, rubro: e.target.value })}
             />
+
+            <select
+              className="input"
+              value={form.lista_precio_id || ''}
+              onChange={(e) => setForm({ ...form, lista_precio_id: e.target.value || null })}
+              style={{ marginTop: 8 }}
+            >
+              <option value="">Sin lista de precios</option>
+              {listas.map(lista => (
+                <option key={lista.id} value={lista.id}>
+                  {lista.nombre} ({lista.moneda})
+                </option>
+              ))}
+            </select>
 
             <div style={{ marginTop: 12, display: "flex", gap: 12 }}>
               <button className="btn" onClick={guardar}>Guardar</button>

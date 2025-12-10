@@ -274,17 +274,23 @@ export default function Cotizar2(){
 		const peso = getPresentacionPeso()
 		const kilos = kilosTotales()
 		const precioUSD = kilos * Number(precioUnitUSD)
+		const precioARS = precioUSD * (Number(valorDolar) || 0)
 
 		const item = {
 			id: Date.now(),
-			producto_nombre: prod?.nombre || 'N/D',
-			presentacion_nombre: pres?.nombre || 'N/D',
+			producto_id: prod?.id || null,
+			presentacion_id: pres?.id || null,
+			producto: prod?.nombre || 'N/D',
+			presentacion: pres?.nombre || 'N/D',
 			cantidad: Number(cantidad) || 1,
+			unidad: 'kg',
 			peso_por_unidad: peso,
 			kilos: kilos,
 			precio_unit_usd: Number(precioUnitUSD),
+			precio: precioARS / (Number(cantidad) || 1), // precio unitario en ARS
+			subtotal: precioARS, // subtotal en ARS
 			precio_item_usd: precioUSD,
-			precio_item_ars: precioUSD * (Number(valorDolar) || 0)
+			precio_item_ars: precioARS
 		}
 
 		setItems(prev => [...prev, item])
@@ -317,7 +323,7 @@ export default function Cotizar2(){
 	function totalKilos(){
 		return items.reduce((sum, it) => {
 			// Solo sumar kilos de productos que NO son por unidad (no son ceras)
-			if(!esProductoPorUnidad(it.producto_nombre)){
+			if(!esProductoPorUnidad(it.producto)){
 				return sum + it.kilos
 			}
 			return sum
@@ -344,8 +350,8 @@ export default function Cotizar2(){
 		let msg = `*COTIZACIÓN - ${fecha}*\n\n`
 		msg += `*Detalles:*\n`
 		items.forEach((it, idx) => {
-			msg += `${idx + 1}. ${it.producto_nombre}\n`
-			if(esProductoPorUnidad(it.producto_nombre)){
+			msg += `${idx + 1}. ${it.producto}\n`
+			if(esProductoPorUnidad(it.producto)){
 				msg += ` x ${it.cantidad} ${it.cantidad === 1 ? 'unidad' : 'unidades'}\n`
 			} else {
 				msg += ` x ${formatKilos(it.kilos)}kg\n`
@@ -534,18 +540,18 @@ export default function Cotizar2(){
 					</thead>
 					<tbody>
 						${items.map((it, idx) => {
-							const cantidadTexto = esProductoPorUnidad(it.producto_nombre) 
+							const cantidadTexto = esProductoPorUnidad(it.producto) 
 								? `${it.cantidad} ${it.cantidad === 1 ? 'unidad' : 'unidades'}` 
 								: `${formatKilos(it.kilos)}kg`
 							
-							const precioUnitario = esProductoPorUnidad(it.producto_nombre) 
+							const precioUnitario = esProductoPorUnidad(it.producto) 
 								? it.precio_item_ars / it.cantidad
 								: it.precio_item_ars / it.kilos
 							
 							return `
 								<tr>
 									<td>${idx + 1}</td>
-									<td><strong>${it.producto_nombre}</strong></td>
+									<td><strong>${it.producto}</strong></td>
 									<td class="text-right">${cantidadTexto}</td>
 									<td class="text-right">$${formatARS(precioUnitario)}</td>
 									<td class="text-right"><strong>$${formatARS(it.precio_item_ars)}</strong></td>
@@ -797,11 +803,11 @@ export default function Cotizar2(){
 							<tbody>
 								{items.map(it => (
 									<tr key={it.id} style={{borderBottom:'1px solid #333'}}>
-							<td style={{padding:'8px'}}>{it.producto_nombre}</td>
-							<td style={{padding:'8px'}}>{it.presentacion_nombre}</td>
+							<td style={{padding:'8px'}}>{it.producto}</td>
+							<td style={{padding:'8px'}}>{it.presentacion}</td>
 							<td style={{padding:'8px'}}>{it.cantidad}</td>
 							<td style={{padding:'8px'}}>
-								{esProductoPorUnidad(it.producto_nombre) 
+								{esProductoPorUnidad(it.producto) 
 									? `${it.cantidad} ${it.cantidad === 1 ? 'un.' : 'un.'}` 
 									: `${formatKilos(it.kilos)}kg`
 								}

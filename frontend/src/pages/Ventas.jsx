@@ -61,6 +61,154 @@ export default function Ventas() {
 
   async function cambiarEstado(ventaId, nuevoEstado) {
     try {
+      // Obtener la venta con su estado actual
+      const { data: venta, error: errorVenta } = await supabase
+        .from('ventas')
+        .select('*')
+        .eq('id', ventaId)
+        .single()
+
+      if (errorVenta) {
+        alert('Error al obtener datos de la venta: ' + errorVenta.message)
+        return
+      }
+
+      const estadoAnterior = venta.estado
+
+      console.log('Cambio de estado:', { estadoAnterior, nuevoEstado, ventaId })
+
+      // Verificar que la venta tenga items válidos
+      if (!venta.items || venta.items.length === 0) {
+        alert('Esta venta no tiene items registrados. No se puede procesar.')
+        return
+      }
+
+      // Verificar que todos los items tengan producto_id
+      const itemsSinProductoId = venta.items.filter(item => !item.producto_id)
+      if (itemsSinProductoId.length > 0) {
+        alert('Algunos items no tienen producto_id. Esta venta fue creada con una versión anterior y no se puede procesar automáticamente.')
+        return
+      }
+
+      // CASO 1: De VENDIDO a PENDIENTE/CANCELADO → Devolver stock
+      if (estadoAnterior === 'vendido' && (nuevoEstado === 'pendiente' || nuevoEstado === 'cancelada' || nuevoEstado === 'cancelado')) {
+        console.log('Devolviendo stock...')
+        for (const item of venta.items) {
+          const kilosADevolver = item.kilos || 0
+          
+          // Obtener stock actual
+          const { data: prodActual } = await supabase
+            .from('productos')
+            .select('stock')
+            .eq('id', item.producto_id)
+            .single()
+
+          if (prodActual) {
+            // Incrementar stock del producto
+            const { error: errorStock } = await supabase
+              .from('productos')
+              .update({
+                stock: prodActual.stock + kilosADevolver
+              })
+              .eq('id', item.producto_id)
+
+            if (errorStock) {
+              console.error('Error devolviendo stock:', errorStock)
+            } else {
+              console.log(`Stock devuelto: ${item.producto} +${kilosADevolver}kg`)
+            }
+          }
+
+          // Registrar movimiento de devolución
+          await supabase
+            .from('movimientos_stock')
+            .insert({
+              producto_id: item.producto_id,
+              tipo: (nuevoEstado === 'cancelada' || nuevoEstado === 'cancelado') ? 'devolucion_cancelacion' : 'devolucion_pendiente',
+              cantidad: kilosADevolver,
+              venta_id: ventaId,
+              created_at: new Date().toISOString(),
+              observaciones: `Cambio de estado ${estadoAnterior} → ${nuevoEstado}. Venta ${venta.numero_cotizacion || ventaId} - ${item.producto}`
+            })
+        }
+      }
+
+      // CASO 2: De PENDIENTE/CANCELADO a VENDIDO → Descontar stock
+      if ((estadoAnterior === 'pendiente' || estadoAnterior === 'cancelada' || estadoAnterior === 'cancelado') && nuevoEstado === 'vendido') {
+        // Obtener todos los productos involucrados para verificar stock
+        const productosIds = [...new Set(venta.items.map(item => item.producto_id))]
+        const { data: productos, error: errorProductos } = await supabase
+          .from('productos')
+          .select('id, nombre, stock')
+          .in('id', productosIds)
+
+        if (errorProductos) {
+          alert('Error al verificar stock: ' + errorProductos.message)
+          return
+        }
+
+        // Verificar stock suficiente para cada item
+        const stockInsuficiente = []
+        for (const item of venta.items) {
+          const producto = productos.find(p => p.id === item.producto_id)
+          if (!producto) {
+            stockInsuficiente.push(`${item.producto}: Producto no encontrado`)
+            continue
+          }
+
+          const kilosADescontar = item.kilos || 0
+          if (producto.stock < kilosADescontar) {
+            stockInsuficiente.push(`${producto.nombre}: Stock actual ${producto.stock}kg, necesario ${kilosADescontar}kg`)
+          }
+        }
+
+        if (stockInsuficiente.length > 0) {
+          alert('⚠️ Stock insuficiente:\n\n' + stockInsuficiente.join('\n') + '\n\n¿Deseas continuar de todos modos?')
+          if (!window.confirm('Confirmar venta con stock insuficiente')) {
+            return
+          }
+        }
+
+        // Descontar stock y registrar movimientos
+        for (const item of venta.items) {
+          const kilosADescontar = item.kilos || 0
+          
+          // Obtener stock actual
+          const { data: prodActual } = await supabase
+            .from('productos')
+            .select('stock')
+            .eq('id', item.producto_id)
+            .single()
+
+          if (prodActual) {
+            // Actualizar stock del producto
+            const { error: errorStock } = await supabase
+              .from('productos')
+              .update({
+                stock: prodActual.stock - kilosADescontar
+              })
+              .eq('id', item.producto_id)
+
+            if (errorStock) {
+              console.error('Error actualizando stock:', errorStock)
+            }
+          }
+
+          // Registrar movimiento de stock
+          await supabase
+            .from('movimientos_stock')
+            .insert({
+              producto_id: item.producto_id,
+              tipo: 'venta',
+              cantidad: -kilosADescontar,
+              venta_id: ventaId,
+              created_at: new Date().toISOString(),
+              observaciones: `Venta ${venta.numero_cotizacion || ventaId} - ${item.producto}`
+            })
+        }
+      }
+
+      // Actualizar estado de la venta
       const { error } = await supabase
         .from('ventas')
         .update({ 
@@ -74,11 +222,19 @@ export default function Ventas() {
         return
       }
 
-      alert(`Estado actualizado a: ${nuevoEstado.toUpperCase()}`)
+      // Mensajes según el cambio
+      if (estadoAnterior === 'vendido' && (nuevoEstado === 'pendiente' || nuevoEstado === 'cancelada' || nuevoEstado === 'cancelado')) {
+        alert(`✓ Estado cambiado a ${nuevoEstado.toUpperCase()} y stock devuelto`)
+      } else if ((estadoAnterior === 'pendiente' || estadoAnterior === 'cancelada' || estadoAnterior === 'cancelado') && nuevoEstado === 'vendido') {
+        alert('✓ Venta confirmada y stock descontado')
+      } else {
+        alert(`Estado actualizado a: ${nuevoEstado.toUpperCase()}`)
+      }
+      
       cargarVentas()
     } catch (err) {
       console.error('Error:', err)
-      alert('Error al cambiar estado')
+      alert('Error al cambiar estado: ' + err.message)
     }
   }
 
@@ -285,9 +441,9 @@ export default function Ventas() {
                     </tr>
                     {ventaExpandida === venta.id && venta.items && (
                       <tr>
-                        <td colSpan={8} style={{ backgroundColor: '#f8f9fa', padding: '16px' }}>
+                        <td colSpan={8} style={{ backgroundColor: '#1a1a1a', padding: '16px', borderTop: '2px solid #333' }}>
                           <div style={{ maxWidth: '800px' }}>
-                            <h4 style={{ marginBottom: '12px', fontSize: '14px', fontWeight: 'bold' }}>
+                            <h4 style={{ marginBottom: '12px', fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>
                               Detalle de Productos
                             </h4>
                             <div style={{ display: 'grid', gap: '8px' }}>
@@ -299,18 +455,18 @@ export default function Ventas() {
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
                                     padding: '10px 14px',
-                                    backgroundColor: 'white',
+                                    backgroundColor: '#2a2a2a',
                                     borderRadius: '8px',
-                                    border: '1px solid #e5e7eb',
+                                    border: '1px solid #444',
                                     fontSize: '13px'
                                   }}
                                 >
                                   <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: '600', marginBottom: '2px' }}>
+                                    <div style={{ fontWeight: '600', marginBottom: '2px', color: '#fff' }}>
                                       {item.producto}
                                     </div>
                                     {item.presentacion && (
-                                      <div style={{ fontSize: '11px', color: '#6b7280' }}>
+                                      <div style={{ fontSize: '11px', color: '#999' }}>
                                         {item.presentacion}
                                       </div>
                                     )}
@@ -322,23 +478,23 @@ export default function Ventas() {
                                     fontSize: '12px'
                                   }}>
                                     <div style={{ textAlign: 'center' }}>
-                                      <div style={{ color: '#6b7280', fontSize: '10px', marginBottom: '2px' }}>
+                                      <div style={{ color: '#999', fontSize: '10px', marginBottom: '2px' }}>
                                         Cantidad
                                       </div>
-                                      <div style={{ fontWeight: '600' }}>
+                                      <div style={{ fontWeight: '600', color: '#fff' }}>
                                         {item.cantidad} {item.unidad || 'kg'}
                                       </div>
                                     </div>
                                     <div style={{ textAlign: 'center' }}>
-                                      <div style={{ color: '#6b7280', fontSize: '10px', marginBottom: '2px' }}>
+                                      <div style={{ color: '#999', fontSize: '10px', marginBottom: '2px' }}>
                                         Precio Unit.
                                       </div>
-                                      <div style={{ fontWeight: '600' }}>
+                                      <div style={{ fontWeight: '600', color: '#fff' }}>
                                         ${formatARS(item.precio)}
                                       </div>
                                     </div>
                                     <div style={{ textAlign: 'right', minWidth: '100px' }}>
-                                      <div style={{ color: '#6b7280', fontSize: '10px', marginBottom: '2px' }}>
+                                      <div style={{ color: '#999', fontSize: '10px', marginBottom: '2px' }}>
                                         Subtotal
                                       </div>
                                       <div style={{ 
