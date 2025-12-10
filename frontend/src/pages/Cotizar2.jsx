@@ -590,8 +590,46 @@ export default function Cotizar2(){
 			return
 		}
 		try {
-			alert(`✓ Venta guardada con ${items.length} items\nTotal: $${totalUSD().toFixed(2)} USD / $${totalARS().toFixed(2)} ARS`)
+			// Generar número de cotización
+			const numeroCotizacion = `COT-${Date.now().toString().slice(-8)}`
+			
+			// Crear fecha con hora de Argentina (UTC-3)
+			const ahora = new Date();
+			const offsetArgentina = -3 * 60; // -3 horas en minutos
+			const offsetLocal = ahora.getTimezoneOffset(); // offset del navegador
+			const diffMinutos = offsetArgentina - offsetLocal;
+			const fechaArgentina = new Date(ahora.getTime() + diffMinutos * 60000);
+			
+			// Preparar datos de la venta
+			const ventaData = {
+				numero_cotizacion: numeroCotizacion,
+				cliente_id: selectedClientId,
+				cliente_nombre: searchCliente || 'Sin especificar',
+				estado: 'pendiente',
+				total_ars: totalARS(),
+				total_kilos: totalKilos(),
+				valor_dolar: Number(valorDolar),
+				items: items,
+				created_at: fechaArgentina.toISOString(),
+				updated_at: fechaArgentina.toISOString()
+			}
+
+			// Insertar en Supabase
+			const { data, error } = await supabase
+				.from('ventas')
+				.insert([ventaData])
+				.select()
+
+			if (error) {
+				console.error('Error al guardar:', error)
+				alert('Error al guardar la venta: ' + error.message)
+				return
+			}
+
+			alert(`✓ Cotización guardada como PENDIENTE\nNúmero: ${numeroCotizacion}\nTotal: $${formatARS(totalARS())} ARS`)
 			setItems([])
+			setSearchCliente('')
+			setSelectedClientId(null)
 		} catch(err) {
 			console.error('Error guardando venta:', err)
 			alert('Error al guardar la venta')

@@ -1,7 +1,51 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 const SalesCard = ({ title, value, percent, icon, fillPercent = 76 }) => {
+  const [displayValue, setDisplayValue] = useState('$0');
+
+  useEffect(() => {
+    // Extraer solo dígitos del string (ej: "$12.500" -> "12500")
+    const cleanValue = value.replace(/\D/g, '');
+    const numericValue = parseInt(cleanValue, 10) || 0;
+    
+    if (numericValue === 0) {
+      setDisplayValue('$0');
+      return;
+    }
+    
+    const duration = 2000;
+    const startTime = Date.now();
+
+    const animate = () => {
+      const currentTime = Date.now();
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      const current = Math.floor(numericValue * easeProgress);
+      
+      const formatted = new Intl.NumberFormat('es-AR', { 
+        minimumFractionDigits: 0, 
+        maximumFractionDigits: 0 
+      }).format(current);
+      
+      setDisplayValue(`$${formatted}`);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        const finalFormatted = new Intl.NumberFormat('es-AR', { 
+          minimumFractionDigits: 0, 
+          maximumFractionDigits: 0 
+        }).format(numericValue);
+        setDisplayValue(`$${finalFormatted}`);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [value]);
+
   return (
     <StyledWrapper fillPercent={fillPercent}>
       <div className="card">
@@ -24,7 +68,7 @@ const SalesCard = ({ title, value, percent, icon, fillPercent = 76 }) => {
         </div>
         <div className="data">
           <p>
-            {value || '39,500'}
+            {displayValue}
           </p>
           <div className="range">
             <div className="fill" style={{ width: `${fillPercent}%` }} />
