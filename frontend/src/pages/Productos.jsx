@@ -145,28 +145,10 @@ export default function Productos(){
 
 				if (error) throw error
 
-				// Copiar precios de la lista GENERAL a la nueva lista
-				const { data: preciosGenerales } = await supabase
-					.from('precios_producto')
-					.select('producto_id, precio_usd_kg')
-					.eq('lista_precio_id', LISTA_GENERAL_ID)
+				// No copiar precios - la nueva lista empieza vacía
+				// Los precios se usarán de la lista GENERAL solo si no existen en esta lista
 
-				if (preciosGenerales && preciosGenerales.length > 0) {
-					const nuevosPreciosPromises = preciosGenerales.map(precio => 
-						supabase
-							.from('precios_producto')
-							.insert({
-								producto_id: precio.producto_id,
-								lista_precio_id: nuevaLista.id,
-								precio_usd_kg: precio.precio_usd_kg,
-								activo: true
-							})
-					)
-
-					await Promise.all(nuevosPreciosPromises)
-				}
-
-				alert('✓ Lista creada correctamente con precios de la lista GENERAL')
+				alert('✓ Lista creada correctamente (vacía)')
 			}
 
 			cargarDatos()
