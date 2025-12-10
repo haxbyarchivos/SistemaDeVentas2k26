@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import supabase from "../utils/supabaseClient";
 import { CardSpotlight } from "../components/ui/card-spotlight";
+import { EncryptedText } from "../components/ui/encrypted-text";
 
 
 export default function Login() {
@@ -79,6 +80,7 @@ export default function Login() {
         minHeight: "100vh",
         minWidth: "100vw",
         display: "flex",
+        flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#000",
@@ -92,6 +94,21 @@ export default function Login() {
         bottom: 0,
       }}
     >
+      {/* Texto encriptado arriba */}
+      <div style={{ marginBottom: "30px", textAlign: "center", zIndex: 20, fontSize: "clamp(18px, 5vw, 24px)" }}>
+        <EncryptedText
+          text="Bienvenido al Sistema de Ventas de "
+          className="font-bold"
+          revealedClassName="text-white"
+        />
+        <EncryptedText
+          text="Coloplastic"
+          className="font-bold"
+          revealedClassName="text-[#F54927]"
+          encryptedClassName="text-gray-600"
+        />
+      </div>
+
       {/* Formulario de login con efecto spotlight */}
       <CardSpotlight style={{ width: "90%", maxWidth: "380px", padding: 0 }}>
         <div

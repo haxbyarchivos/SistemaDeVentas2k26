@@ -84,7 +84,8 @@ const StyledWrapper = styled.div`
     padding: 1.5rem;
     background: linear-gradient(180deg, #1a1a1a, #0f0f0f);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-    max-width: 340px;
+    width: 340px;
+    min-height: 180px;
     border-radius: 28px;
     border: 1px solid #2a2a2a;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
@@ -92,6 +93,8 @@ const StyledWrapper = styled.div`
     transform: translateY(20px);
     opacity: 0;
     animation: cardFadeUp 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    display: flex;
+    flex-direction: column;
   }
 
   .card:hover {
