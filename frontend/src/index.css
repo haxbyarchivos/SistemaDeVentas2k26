@@ -89,3 +89,89 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Responsive fixes - solo para tablas */
+.table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100vw;
+}
+
+table {
+  width: 100%;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  /* Reduce padding general solo en mobile */
+  body {
+    padding: 0 !important;
+  }
+
+  /* Contenedor principal con padding reducido */
+  body > div {
+    padding: 10px !important;
+  }
+  
+  /* Tablas más compactas */
+  table {
+    font-size: 11px;
+  }
+  
+  th, td {
+    padding: 6px 4px !important;
+    font-size: 11px !important;
+  }
+  
+  /* Botones más pequeños */
+  button:not(.preserve-size) {
+    font-size: 11px !important;
+    padding: 5px 8px !important;
+  }
+
+  /* Headers más pequeños */
+  h1 {
+    font-size: 20px !important;
+  }
+
+  h2 {
+    font-size: 18px !important;
+  }
+
+  h3 {
+    font-size: 16px !important;
+  }
+
+  /* Inputs y selects responsive */
+  input, select, textarea {
+    font-size: 14px !important;
+    padding: 8px !important;
+  }
+
+  /* Grids responsive */
+  [style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Labels más pequeños */
+  label, .small {
+    font-size: 12px !important;
+  }
+
+  /* Tabla de ventas ultra compacta */
+  .ventas-table {
+    font-size: 10px !important;
+    min-width: 650px !important;
+  }
+
+  .ventas-table th,
+  .ventas-table td {
+    padding: 4px 2px !important;
+    font-size: 10px !important;
+  }
+
+  .ventas-table button {
+    font-size: 9px !important;
+    padding: 3px 6px !important;
+  }
+}

@@ -436,6 +436,7 @@ export default function Stock(){
 			</div>
 
 			<h3 style={{ fontSize: '16px', marginBottom: '12px', color: '#fff' }}>Stock de Productos</h3>
+			<div style={{overflowX:'auto', width:'100%'}}>
 			{loading ? (
 				<div className='small'>Cargando stock...</div>
 			) : (
@@ -499,9 +500,11 @@ export default function Stock(){
 					</tbody>
 				</table>
 			)}
+			</div>
 
 			<h3 style={{ fontSize: '16px', marginBottom: '12px', color: '#fff' }}>Últimos Movimientos</h3>
-			<table className='table'>
+			<div style={{overflowX:'auto', width:'100%'}}>
+			<table className='table' style={{minWidth:'700px'}}>
 				<thead>
 					<tr>
 						<th>Fecha</th>
@@ -549,6 +552,7 @@ export default function Stock(){
 					)}
 				</tbody>
 			</table>
+			</div>
 
 			<div className='comment'>
 				💡 Los movimientos automáticos por ventas se registrarán cuando cambies el estado a "vendido"

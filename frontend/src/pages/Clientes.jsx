@@ -411,8 +411,10 @@ const SearchInput = ({ value, onChange }) => {
 
 const StyledWrapper = styled.div`
   .grid {
-    height: 800px;
-    width: 800px;
+    height: 100vw;
+    max-height: 800px;
+    width: 100vw;
+    max-width: 800px;
     background-image: linear-gradient(to right, #0f0f10 1px, transparent 1px),
       linear-gradient(to bottom, #0f0f10 1px, transparent 1px);
     background-size: 1rem 1rem;
@@ -438,7 +440,8 @@ const StyledWrapper = styled.div`
   .input {
     background-color: #010201;
     border: none;
-    width: 301px;
+    width: 100%;
+    max-width: 301px;
     height: 56px;
     border-radius: 10px;
     color: white;
@@ -502,8 +505,10 @@ const StyledWrapper = styled.div`
     left: 50%;
     transform: translate(-50%, -50%) rotate(83deg);
     position: absolute;
-    width: 600px;
-    height: 600px;
+    width: 100vw;
+    max-width: 600px;
+    height: 100vw;
+    max-height: 600px;
     background-repeat: no-repeat;
     background-position: 0 0;
     filter: brightness(1.4);
@@ -531,8 +536,10 @@ const StyledWrapper = styled.div`
     left: 50%;
     transform: translate(-50%, -50%) rotate(70deg);
     position: absolute;
-    width: 600px;
-    height: 600px;
+    width: 100vw;
+    max-width: 600px;
+    height: 100vw;
+    max-height: 600px;
     filter: brightness(1.3);
     background-repeat: no-repeat;
     background-position: 0 0;
@@ -558,8 +565,10 @@ const StyledWrapper = styled.div`
     left: 50%;
     transform: translate(-50%, -50%) rotate(82deg);
     position: absolute;
-    width: 600px;
-    height: 600px;
+    width: 100vw;
+    max-width: 600px;
+    height: 100vw;
+    max-height: 600px;
     background-repeat: no-repeat;
     background-position: 0 0;
     background-image: conic-gradient(
@@ -630,8 +639,10 @@ const StyledWrapper = styled.div`
     left: 50%;
     transform: translate(-50%, -50%) rotate(60deg);
     position: absolute;
-    width: 999px;
-    height: 999px;
+    width: 100vw;
+    max-width: 600px;
+    height: 100vw;
+    max-height: 600px;
     background-repeat: no-repeat;
     background-position: 0 0;
     background-image: conic-gradient(
@@ -708,8 +719,10 @@ const StyledWrapper = styled.div`
     left: 50%;
     transform: translate(-50%, -50%) rotate(90deg);
     position: absolute;
-    width: 600px;
-    height: 600px;
+    width: 100vw;
+    max-width: 600px;
+    height: 100vw;
+    max-height: 600px;
     background-repeat: no-repeat;
     background-position: 0 0;
     filter: brightness(1.35);

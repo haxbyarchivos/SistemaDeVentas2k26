@@ -12,6 +12,10 @@ export default function Configuracion() {
   const [showFormulario, setShowFormulario] = useState(false)
   const [formData, setFormData] = useState({ username: '', password: '', role: 'cajero' })
   const [editingId, setEditingId] = useState(null)
+  const [roles, setRoles] = useState([{ nombre: 'admin', tipo: 'admin' }, { nombre: 'cajero', tipo: 'usuario' }])
+  const [modalRoles, setModalRoles] = useState(false)
+  const [nuevoRol, setNuevoRol] = useState({ nombre: '', tipo: 'usuario' })
+  const [editandoRol, setEditandoRol] = useState(null)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -29,6 +33,12 @@ export default function Configuracion() {
     setTema(temaGuardado)
     setNotificaciones(notificacionesGuardadas)
     setIdioma(idiomaGuardado)
+
+    // Cargar roles guardados
+    const rolesGuardados = localStorage.getItem('roles')
+    if (rolesGuardados) {
+      setRoles(JSON.parse(rolesGuardados))
+    }
 
     // Cargar usuarios si es admin
     if (raw) {
@@ -135,6 +145,71 @@ export default function Configuracion() {
     setFormData({ username: '', password: '', role: 'cajero' })
     setEditingId(null)
     setShowFormulario(false)
+  }
+
+  const guardarRol = () => {
+    if (!nuevoRol.nombre.trim()) {
+      alert('El nombre del rol es obligatorio')
+      return
+    }
+
+    // Verificar que no exista ya un rol con ese nombre
+    const existente = roles.find(r => r.nombre.toLowerCase() === nuevoRol.nombre.toLowerCase() && r.nombre !== editandoRol?.nombre)
+    if (existente) {
+      alert('Ya existe un rol con ese nombre')
+      return
+    }
+
+    let nuevosRoles
+    if (editandoRol) {
+      // Editar rol existente
+      nuevosRoles = roles.map(r => r.nombre === editandoRol.nombre ? nuevoRol : r)
+    } else {
+      // Crear nuevo rol
+      nuevosRoles = [...roles, nuevoRol]
+    }
+
+    setRoles(nuevosRoles)
+    localStorage.setItem('roles', JSON.stringify(nuevosRoles))
+    setNuevoRol({ nombre: '', tipo: 'usuario' })
+    setEditandoRol(null)
+    alert(editandoRol ? 'Rol actualizado correctamente' : 'Rol creado correctamente')
+  }
+
+  const eliminarRol = (nombreRol) => {
+    // No permitir eliminar admin
+    if (nombreRol === 'admin') {
+      alert('No se puede eliminar el rol de admin')
+      return
+    }
+
+    // Verificar si hay usuarios con este rol
+    const usuariosConRol = usuarios.filter(u => u.role === nombreRol)
+    if (usuariosConRol.length > 0) {
+      alert(`No se puede eliminar el rol porque hay ${usuariosConRol.length} usuario(s) asignado(s)`)
+      return
+    }
+
+    if (window.confirm(`¿Estás seguro de eliminar el rol "${nombreRol}"?`)) {
+      const nuevosRoles = roles.filter(r => r.nombre !== nombreRol)
+      setRoles(nuevosRoles)
+      localStorage.setItem('roles', JSON.stringify(nuevosRoles))
+      alert('Rol eliminado correctamente')
+    }
+  }
+
+  const editarRol = (rol) => {
+    if (rol.nombre === 'admin') {
+      alert('No se puede editar el rol de admin')
+      return
+    }
+    setNuevoRol({ ...rol })
+    setEditandoRol(rol)
+  }
+
+  const cancelarEdicionRol = () => {
+    setNuevoRol({ nombre: '', tipo: 'usuario' })
+    setEditandoRol(null)
   }
 
   return (
@@ -283,6 +358,27 @@ export default function Configuracion() {
         >
           ✓ Guardar Configuración
         </button>
+
+        {user?.role === 'admin' && (
+          <button
+            onClick={() => setModalRoles(true)}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: '#8b5cf6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              fontSize: '14px',
+              transition: 'background 0.2s ease',
+            }}
+            onMouseEnter={(e) => (e.target.style.backgroundColor = '#7c3aed')}
+            onMouseLeave={(e) => (e.target.style.backgroundColor = '#8b5cf6')}
+          >
+            👥 Gestionar Roles
+          </button>
+        )}
         <button
           onClick={handleRestoreDefaults}
           style={{
@@ -408,8 +504,11 @@ export default function Configuracion() {
                     cursor: 'pointer',
                   }}
                 >
-                  <option value="cajero">Cajero</option>
-                  <option value="admin">Admin</option>
+                  {roles.map(rol => (
+                    <option key={rol.nombre} value={rol.nombre}>
+                      {rol.nombre.charAt(0).toUpperCase() + rol.nombre.slice(1)} {rol.tipo === 'admin' ? '(Admin)' : '(Usuario)'}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -526,8 +625,8 @@ export default function Configuracion() {
       {/* INFORMACIÓN */}
       <div
         style={{
-          padding: '20px',
-          backgroundColor: '#1a1a1a',
+          padding: '15px',
+          backgroundColor: '#1d1d1d',
           borderRadius: '8px',
           border: '1px solid #333',
           fontSize: '13px',
@@ -540,6 +639,225 @@ export default function Configuracion() {
           Versión: 1.0.0 | Sistema de Ventas 2K26
         </p>
       </div>
+
+      {/* MODAL: Gestionar Roles */}
+      {modalRoles && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+          onClick={() => {
+            setModalRoles(false)
+            cancelarEdicionRol()
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#1a1a1a',
+              padding: '30px',
+              borderRadius: '12px',
+              width: '90%',
+              maxWidth: '600px',
+              border: '1px solid #333',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ marginTop: 0, marginBottom: '25px', color: '#fff', fontSize: '22px' }}>
+              👥 Gestionar Roles
+            </h2>
+
+            {/* Formulario para crear/editar rol */}
+            <div style={{ marginBottom: '30px', padding: '20px', backgroundColor: '#222', borderRadius: '8px' }}>
+              <h3 style={{ marginTop: 0, marginBottom: '15px', fontSize: '16px', color: '#4da6ff' }}>
+                {editandoRol ? '✏️ Editar Rol' : '➕ Crear Nuevo Rol'}
+              </h3>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: '#999' }}>
+                  Nombre del Rol
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: Vendedor, Supervisor, etc."
+                  value={nuevoRol.nombre}
+                  onChange={(e) => setNuevoRol({ ...nuevoRol, nombre: e.target.value })}
+                  disabled={editandoRol?.nombre === 'admin'}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    backgroundColor: '#333',
+                    color: 'white',
+                    border: '1px solid #444',
+                    borderRadius: '5px',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: '#999' }}>
+                  Tipo de Rol
+                </label>
+                <select
+                  value={nuevoRol.tipo}
+                  onChange={(e) => setNuevoRol({ ...nuevoRol, tipo: e.target.value })}
+                  disabled={editandoRol?.nombre === 'admin'}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    backgroundColor: '#333',
+                    color: 'white',
+                    border: '1px solid #444',
+                    borderRadius: '5px',
+                    boxSizing: 'border-box',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="usuario">👤 Usuario (acceso limitado)</option>
+                  <option value="admin">🔐 Admin (acceso completo)</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={guardarRol}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  {editandoRol ? '💾 Actualizar' : '➕ Crear Rol'}
+                </button>
+                {editandoRol && (
+                  <button
+                    onClick={cancelarEdicionRol}
+                    style={{
+                      padding: '10px 20px',
+                      backgroundColor: '#444',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Lista de roles existentes */}
+            <div>
+              <h3 style={{ marginTop: 0, marginBottom: '15px', fontSize: '16px', color: '#fff' }}>
+                📋 Roles Existentes ({roles.length})
+              </h3>
+
+              <div style={{ display: 'grid', gap: '10px' }}>
+                {roles.map((rol) => (
+                  <div
+                    key={rol.nombre}
+                    style={{
+                      padding: '15px',
+                      backgroundColor: '#222',
+                      borderRadius: '8px',
+                      border: '1px solid #333',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#fff', marginBottom: '4px' }}>
+                        {rol.nombre.charAt(0).toUpperCase() + rol.nombre.slice(1)}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#999' }}>
+                        Tipo: {rol.tipo === 'admin' ? '🔐 Admin (acceso completo)' : '👤 Usuario (acceso limitado)'}
+                      </div>
+                      {rol.nombre === 'admin' && (
+                        <div style={{ fontSize: '11px', color: '#f59e0b', marginTop: '4px' }}>
+                          ⚠️ Rol del sistema (no se puede editar/eliminar)
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {rol.nombre !== 'admin' && (
+                        <>
+                          <button
+                            onClick={() => editarRol(rol)}
+                            style={{
+                              padding: '6px 12px',
+                              backgroundColor: '#4da6ff',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '5px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                            }}
+                          >
+                            ✏️ Editar
+                          </button>
+                          <button
+                            onClick={() => eliminarRol(rol.nombre)}
+                            style={{
+                              padding: '6px 12px',
+                              backgroundColor: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '5px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                            }}
+                          >
+                            🗑️
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setModalRoles(false)
+                cancelarEdicionRol()
+              }}
+              style={{
+                marginTop: '20px',
+                width: '100%',
+                padding: '12px',
+                backgroundColor: '#444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+              }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

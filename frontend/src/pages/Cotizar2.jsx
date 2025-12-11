@@ -689,7 +689,7 @@ export default function Cotizar2(){
 				</div>
 
 				<label className='small' style={{margin:0, color:'#fff'}}>Dólar (ARS)</label>
-				<input className='input' style={{width:120, backgroundColor:'#1a1a1a', color:'#fff'}} value={valorDolar} onChange={e=>setValorDolar(e.target.value)} onBlur={e=>saveValorDolarToConfig(e.target.value)} placeholder='Ej: 350.50' />
+				<input className='input' style={{width:'100%', maxWidth:120, minWidth:80, backgroundColor:'#1a1a1a', color:'#fff'}} value={valorDolar} onChange={e=>setValorDolar(e.target.value)} onBlur={e=>saveValorDolarToConfig(e.target.value)} placeholder='Ej: 350.50' />
 				<button className='btn btn-ghost' onClick={()=>saveValorDolarToConfig(valorDolar)}>Guardar</button>
 			</div>
 		</div>
@@ -701,7 +701,7 @@ export default function Cotizar2(){
 		<PageContainer title="Cotizador" subtitle="Crear cotizaciones precisas" footer={footerContent}>
 			<div style={{display:'grid', gap:12}}>
 				{/* Formulario */}
-				<div style={{display:'grid', gridTemplateColumns: '1fr 1fr 100px 100px', gap:8, padding:'12px', backgroundColor:'#1a1a1a', borderRadius:'8px', alignItems:'end', border:'1px solid #333'}}>
+				<div style={{display:'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap:8, padding:'12px', backgroundColor:'#1a1a1a', borderRadius:'8px', alignItems:'end', border:'1px solid #333'}}>
 					{/* Producto con búsqueda */}
 					<div style={{position:'relative'}} ref={refProducto}>
 						<label className='small' style={{color:'#fff'}}>Producto</label>
@@ -789,7 +789,8 @@ export default function Cotizar2(){
 					{items.length === 0 ? (
 						<div className='small' style={{color:'#999'}}>El carrito está vacío. Agrega items para empezar.</div>
 					) : (
-						<table className='table' style={{width:'100%', fontSize:'12px', color:'#fff'}}>
+						<div style={{overflowX:'auto', width:'100%'}}>
+						<table className='table' style={{width:'100%', minWidth:'650px', fontSize:'12px', color:'#fff'}}>
 							<thead>
 								<tr style={{borderBottom:'1px solid #333'}}>
 									<th style={{textAlign:'left', padding:'8px', color:'#aaa'}}>Producto</th>
@@ -820,17 +821,20 @@ export default function Cotizar2(){
 								))}
 							</tbody>
 						</table>
+						</div>
 					)}
 				</div>
 
-			{/* Totales */}
-			{items.length > 0 && (
-				<div style={{display:'flex', justifyContent:'flex-end', gap:20, padding:'12px', backgroundColor:'#1a1a1a', borderRadius:'8px', border:'1px solid #333'}}>
-					<div className='title' style={{fontSize:'16px', color:'#f39c12'}}>Kg: {formatKilos(totalKilos())}</div>
-					<div className='title' style={{fontSize:'16px', color:'#fff'}}>USD: ${totalUSD().toFixed(2)}</div>
-					<div className='title' style={{fontSize:'16px', color:'#4da6ff'}}>ARS: ${formatARS(totalARS())}</div>
-				</div>
-			)}				{/* Botones de acción */}
+				{/* Totales */}
+				{items.length > 0 && (
+					<div style={{display:'flex', justifyContent:'flex-end', gap:20, padding:'12px', backgroundColor:'#1a1a1a', borderRadius:'8px', border:'1px solid #333'}}>
+						<div className='title' style={{fontSize:'16px', color:'#f39c12'}}>Kg: {formatKilos(totalKilos())}</div>
+						<div className='title' style={{fontSize:'16px', color:'#fff'}}>USD: ${totalUSD().toFixed(2)}</div>
+						<div className='title' style={{fontSize:'16px', color:'#4da6ff'}}>ARS: ${formatARS(totalARS())}</div>
+					</div>
+				)}
+
+				{/* Botones de acción */}
 				{items.length > 0 && (
 					<div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
 						<button className='btn' onClick={guardarVenta}>💾 Guardar venta</button>

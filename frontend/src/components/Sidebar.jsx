@@ -136,7 +136,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose = ()
               color: isActive(item.to) ? "white" : "#999",
               textAlign: collapsed && !isMobile ? "center" : "left",
               cursor: "pointer",
-              fontSize: isMobile ? "16px" : "14px",
+              fontSize: isMobile ? "20px" : "18px",
               fontWeight: isActive(item.to) ? "bold" : "normal",
               transition: "all 0.2s ease",
               whiteSpace: "nowrap",
@@ -174,17 +174,17 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose = ()
       >
         {/* INFORMACIÓN DE USUARIO */}
         {!collapsed && !isMobile && (
-          <div style={{ marginBottom: "12px", color: "#999", fontSize: "12px" }}>
+          <div style={{ marginBottom: "12px", color: "#999", fontSize: "16px" }}>
             <p style={{ margin: "0 0 6px 0" }}>Usuario:</p>
-            <p style={{ margin: 0, color: "white", fontWeight: "bold", wordBreak: "break-word" }}>
+            <p style={{ margin: 0, color: "white", fontWeight: "bold", fontSize: "18px", wordBreak: "break-word" }}>
               {user.username}
             </p>
           </div>
         )}
         {isMobile && (
-          <div style={{ marginBottom: "12px", color: "#999", fontSize: "14px" }}>
+          <div style={{ marginBottom: "12px", color: "#999", fontSize: "18px" }}>
             <p style={{ margin: "0 0 6px 0" }}>Usuario:</p>
-            <p style={{ margin: 0, color: "white", fontWeight: "bold" }}>
+            <p style={{ margin: 0, color: "white", fontWeight: "bold", fontSize: "20px" }}>
               {user.username}
             </p>
           </div>
@@ -195,16 +195,16 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose = ()
           <div
             style={{
               backgroundColor: "#222",
-              padding: "10px",
+              padding: "12px",
               borderRadius: "5px",
-              fontSize: "12px",
+              fontSize: "16px",
               color: "#999",
               textAlign: "center",
               borderLeft: "2px solid #4da6ff",
             }}
           >
-            <p style={{ margin: "0 0 5px 0", fontSize: "11px" }}>Sesión activa:</p>
-            <p style={{ margin: 0, color: "#4da6ff", fontWeight: "bold", fontSize: "14px" }}>
+            <p style={{ margin: "0 0 5px 0", fontSize: "15px" }}>Sesión activa:</p>
+            <p style={{ margin: 0, color: "#4da6ff", fontWeight: "bold", fontSize: "18px" }}>
               {sessionTime}
             </p>
           </div>
@@ -215,14 +215,14 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose = ()
           onClick={handleLogout}
           style={{
             width: "100%",
-            padding: "10px",
+            padding: "14px",
             backgroundColor: "#c41e3a",
             color: "white",
             border: "none",
             borderRadius: "5px",
             cursor: "pointer",
             fontWeight: "bold",
-            fontSize: isMobile ? "14px" : "12px",
+            fontSize: isMobile ? "18px" : "16px",
             transition: "background 0.2s ease",
           }}
           onMouseEnter={(e) => (e.target.style.backgroundColor = "#a01830")}

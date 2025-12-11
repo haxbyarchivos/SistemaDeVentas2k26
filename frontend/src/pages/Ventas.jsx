@@ -364,18 +364,18 @@ export default function Ventas() {
       {loading ? (
         <div className="small">Cargando ventas...</div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table className="table" style={{ width: '100%', fontSize: '13px' }}>
+        <div style={{ overflowX: 'auto', width: '100%' }}>
+          <table className="table ventas-table" style={{ width: '100%', minWidth: '800px', fontSize: '13px' }}>
             <thead>
               <tr>
-                <th>Número</th>
-                <th>Fecha</th>
-                <th>Cliente</th>
-                <th>Total ARS</th>
-                <th>Kilos</th>
-                <th>Items</th>
-                <th>Estado</th>
-                <th>Acciones</th>
+                <th style={{ minWidth: '60px' }}>N°</th>
+                <th style={{ minWidth: '80px' }}>Fecha</th>
+                <th style={{ minWidth: '120px' }}>Cliente</th>
+                <th style={{ minWidth: '100px' }}>Total ARS</th>
+                <th style={{ minWidth: '60px' }}>Kg</th>
+                <th style={{ minWidth: '50px' }}>Items</th>
+                <th style={{ minWidth: '80px' }}>Estado</th>
+                <th style={{ minWidth: '140px' }}>Acciones</th>
               </tr>
             </thead>
             <tbody>

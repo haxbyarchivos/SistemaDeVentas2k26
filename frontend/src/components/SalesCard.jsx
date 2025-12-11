@@ -84,7 +84,9 @@ const StyledWrapper = styled.div`
     padding: 1.5rem;
     background: linear-gradient(180deg, #1a1a1a, #0f0f0f);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-    width: 340px;
+    width: 100%;
+    min-width: 280px;
+    max-width: 340px;
     height: 180px;
     border-radius: 28px;
     border: 1px solid #2a2a2a;
@@ -259,6 +261,23 @@ const StyledWrapper = styled.div`
     50% {
       transform: scale(1.08);
       box-shadow: 0 6px 14px rgba(16, 185, 129, 0.45);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .card {
+      padding: 1rem;
+      min-width: 260px;
+      height: auto;
+      min-height: 160px;
+    }
+
+    .data p {
+      font-size: clamp(28px, 8vw, 38px);
+    }
+
+    .title-text {
+      font-size: 14px;
     }
   }
 `;
