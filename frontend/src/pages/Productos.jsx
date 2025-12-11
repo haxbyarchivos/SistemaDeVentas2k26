@@ -16,6 +16,14 @@ export default function Productos(){
 	const [listaEditar, setListaEditar] = useState(null)
 	const [nombreLista, setNombreLista] = useState('')
 	const [monedaLista, setMonedaLista] = useState('USD')
+	const [modalPresentaciones, setModalPresentaciones] = useState(false)
+	const [presentaciones, setPresentaciones] = useState([])
+	const [presentacionEditar, setPresentacionEditar] = useState(null)
+	const [nombrePresentacion, setNombrePresentacion] = useState('')
+	const [pesoKgPresentacion, setPesoKgPresentacion] = useState('')
+	const [modalProducto, setModalProducto] = useState(false)
+	const [productoEditar, setProductoEditar] = useState(null)
+	const [nombreProducto, setNombreProducto] = useState('')
 
 	useEffect(() => {
 		cargarDatos()
@@ -68,6 +76,14 @@ export default function Productos(){
 			console.log('Mapa de precios organizado:', preciosMap)
 			setPrecios(preciosMap)
 
+			// Cargar presentaciones
+			const { data: presentacionesData } = await supabase
+				.from('presentaciones')
+				.select('*')
+				.order('nombre')
+			
+			if (presentacionesData) setPresentaciones(presentacionesData)
+
 		} catch (err) {
 			console.error('Error cargando datos:', err)
 		} finally {
@@ -95,6 +111,85 @@ export default function Productos(){
 		setPreciosEditar({})
 	}
 
+	function abrirModalProducto() {
+		setModalProducto(true)
+	}
+
+	function cerrarModalProducto() {
+		setModalProducto(false)
+		setProductoEditar(null)
+		setNombreProducto('')
+	}
+
+	function abrirEditarProducto(producto) {
+		setProductoEditar(producto)
+		setNombreProducto(producto.nombre)
+		setModalProducto(true)
+	}
+
+	async function guardarProducto() {
+		if (!nombreProducto.trim()) {
+			alert('El nombre del producto es requerido')
+			return
+		}
+
+		try {
+			if (productoEditar) {
+				// Editar producto existente
+				const { error } = await supabase
+					.from('productos')
+					.update({ nombre: nombreProducto })
+					.eq('id', productoEditar.id)
+
+				if (error) throw error
+				alert('✓ Producto actualizado correctamente')
+			} else {
+				// Crear nuevo producto
+				const { error } = await supabase
+					.from('productos')
+					.insert({
+						nombre: nombreProducto,
+						activo: true,
+						stock: 0,
+						stock_minimo: 10
+					})
+
+				if (error) throw error
+				alert('✓ Producto creado correctamente')
+			}
+
+			cargarDatos()
+			cerrarModalProducto()
+		} catch (err) {
+			console.error('Error guardando producto:', err)
+			alert('Error al guardar producto: ' + err.message)
+		}
+	}
+
+	async function toggleActivoProducto(producto) {
+		const nuevoEstado = !producto.activo
+		const mensaje = nuevoEstado ? 'activar' : 'desactivar'
+		
+		if (!window.confirm(`¿Estás seguro de ${mensaje} el producto "${producto.nombre}"?`)) {
+			return
+		}
+
+		try {
+			const { error } = await supabase
+				.from('productos')
+				.update({ activo: nuevoEstado })
+				.eq('id', producto.id)
+
+			if (error) throw error
+
+			alert(`✓ Producto ${nuevoEstado ? 'activado' : 'desactivado'} correctamente`)
+			cargarDatos()
+		} catch (err) {
+			console.error('Error cambiando estado:', err)
+			alert('Error al cambiar estado: ' + err.message)
+		}
+	}
+
 	function abrirModalListas() {
 		setModalListas(true)
 	}
@@ -104,6 +199,95 @@ export default function Productos(){
 		setListaEditar(null)
 		setNombreLista('')
 		setMonedaLista('USD')
+	}
+
+	function abrirModalPresentaciones() {
+		setModalPresentaciones(true)
+	}
+
+	function cerrarModalPresentaciones() {
+		setModalPresentaciones(false)
+		setPresentacionEditar(null)
+		setNombrePresentacion('')
+		setPesoKgPresentacion('')
+	}
+
+	function abrirEditarPresentacion(presentacion) {
+		setPresentacionEditar(presentacion)
+		setNombrePresentacion(presentacion.nombre)
+		setPesoKgPresentacion(presentacion.peso_kg.toString())
+	}
+
+	async function guardarPresentacion() {
+		if (!nombrePresentacion.trim()) {
+			alert('El nombre es requerido')
+			return
+		}
+
+		const pesoKg = parseFloat(pesoKgPresentacion)
+		if (isNaN(pesoKg) || pesoKg <= 0) {
+			alert('El peso en kg debe ser mayor a 0')
+			return
+		}
+
+		try {
+			if (presentacionEditar) {
+				// Editar presentación existente
+				const { error } = await supabase
+					.from('presentaciones')
+					.update({
+						nombre: nombrePresentacion,
+						peso_kg: pesoKg
+					})
+					.eq('id', presentacionEditar.id)
+
+				if (error) throw error
+				alert('✓ Presentación actualizada correctamente')
+			} else {
+				// Crear nueva presentación
+				const { error } = await supabase
+					.from('presentaciones')
+					.insert({
+						nombre: nombrePresentacion,
+						peso_kg: pesoKg
+					})
+
+				if (error) throw error
+				alert('✓ Presentación creada correctamente')
+			}
+
+			cargarDatos()
+			setPresentacionEditar(null)
+			setNombrePresentacion('')
+			setPesoKgPresentacion('')
+		} catch (err) {
+			console.error('Error guardando presentación:', err)
+			alert('Error al guardar presentación: ' + err.message)
+		}
+	}
+
+	async function eliminarPresentacion(presentacionId) {
+		if (!window.confirm('¿Estás seguro de eliminar esta presentación?')) {
+			return
+		}
+
+		try {
+			const { error } = await supabase
+				.from('presentaciones')
+				.delete()
+				.eq('id', presentacionId)
+
+			if (error) throw error
+
+			alert('✓ Presentación eliminada correctamente')
+			cargarDatos()
+			setPresentacionEditar(null)
+			setNombrePresentacion('')
+			setPesoKgPresentacion('')
+		} catch (err) {
+			console.error('Error eliminando presentación:', err)
+			alert('Error al eliminar presentación: ' + err.message)
+		}
 	}
 
 	function editarLista(lista) {
@@ -249,9 +433,15 @@ export default function Productos(){
 
 	return (
 		<PageContainer title="Productos" subtitle="Listado de productos" footer={<Link to='/dashboard' className='back-link'>Volver</Link>}>
-			<div style={{ marginBottom: '16px' }}>
+			<div style={{ marginBottom: '16px', display: 'flex', gap: '12px' }}>
+				<button className="btn" onClick={abrirModalProducto}>
+					Crear Producto
+				</button>
 				<button className="btn" onClick={abrirModalListas}>
 					Gestionar Listas de Precios
+				</button>
+				<button className="btn" onClick={abrirModalPresentaciones}>
+					Gestionar Presentaciones
 				</button>
 			</div>
 
@@ -260,13 +450,14 @@ export default function Productos(){
 					<tr>
 						<th>Producto</th>
 						<th>Precio Lista General (USD)</th>
+						<th>Estado</th>
 						<th>Acciones</th>
 					</tr>
 				</thead>
 				<tbody>
 					{productos.length === 0 ? (
 						<tr>
-							<td colSpan={3} className='small'>No hay productos cargados</td>
+							<td colSpan={4} className='small'>No hay productos cargados</td>
 						</tr>
 					) : (
 						productos.map(prod => {
@@ -276,12 +467,39 @@ export default function Productos(){
 									<td>{prod.nombre}</td>
 									<td>${precioGeneral.toFixed(2)}</td>
 									<td>
+										<span style={{ 
+											color: prod.activo ? '#10b981' : '#ef4444',
+											fontWeight: 'bold',
+											fontSize: '12px'
+										}}>
+											{prod.activo ? '✓ Activo' : '✕ Inactivo'}
+										</span>
+									</td>
+									<td>
+										<button 
+											className='btn btn-ghost' 
+											onClick={() => abrirEditarProducto(prod)}
+											style={{ padding: '4px 8px', fontSize: '11px', marginRight: '4px' }}
+										>
+											Editar
+										</button>
 										<button 
 											className='btn btn-ghost' 
 											onClick={() => abrirModalEditar(prod)}
-											style={{ padding: '4px 8px', fontSize: '12px' }}
+											style={{ padding: '4px 8px', fontSize: '11px', marginRight: '4px' }}
 										>
-											Editar precios
+											Precios
+										</button>
+										<button 
+											className='btn btn-ghost' 
+											onClick={() => toggleActivoProducto(prod)}
+											style={{ 
+												padding: '4px 8px', 
+												fontSize: '11px',
+												color: prod.activo ? '#ef4444' : '#10b981'
+											}}
+										>
+											{prod.activo ? 'Desactivar' : 'Activar'}
 										</button>
 									</td>
 								</tr>
@@ -551,6 +769,243 @@ export default function Productos(){
 						<div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
 							<button className="btn btn-ghost" onClick={cerrarModalListas} onMouseDown={(e) => e.stopPropagation()}>
 								Cerrar
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Modal Gestionar Presentaciones */}
+			{modalPresentaciones && (
+				<div 
+					style={{
+						position: 'fixed',
+						top: 0,
+						left: 0,
+						right: 0,
+						bottom: 0,
+						backgroundColor: 'rgba(0,0,0,0.7)',
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						zIndex: 9999
+					}}
+					onMouseDown={cerrarModalPresentaciones}
+				>
+					<div 
+						style={{
+							backgroundColor: '#1a1a1a',
+							padding: '24px',
+							borderRadius: '8px',
+							width: '90%',
+							maxWidth: '700px',
+							border: '1px solid #333',
+							maxHeight: '80vh',
+							overflowY: 'auto'
+						}}
+						onMouseDown={(e) => e.stopPropagation()}
+					>
+						<h3 style={{ marginBottom: '20px', fontSize: '18px', color: '#fff' }}>
+							Gestionar Presentaciones
+						</h3>
+
+						<div style={{ marginBottom: '24px', padding: '16px', backgroundColor: '#0a0a0a', borderRadius: '8px' }}>
+							<h4 style={{ fontSize: '16px', marginBottom: '16px', color: '#fff' }}>
+								{presentacionEditar ? 'Editar Presentación' : 'Nueva Presentación'}
+							</h4>
+
+							<div style={{ marginBottom: '16px' }}>
+								<label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: '#aaa' }}>
+									Nombre de la presentación (envase)
+								</label>
+								<input
+									type="text"
+									value={nombrePresentacion}
+									onChange={(e) => setNombrePresentacion(e.target.value)}
+									onMouseDown={(e) => e.stopPropagation()}
+									placeholder="Ej: Bidón 20kg, Balde 10kg"
+									style={{
+										width: '100%',
+										padding: '10px',
+										backgroundColor: '#1a1a1a',
+										border: '1px solid #333',
+										borderRadius: '4px',
+										color: '#fff',
+										fontSize: '14px'
+									}}
+								/>
+							</div>
+
+							<div style={{ marginBottom: '16px' }}>
+								<label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: '#aaa' }}>
+									Peso en kg
+								</label>
+								<input
+									type="number"
+									step="0.01"
+									value={pesoKgPresentacion}
+									onChange={(e) => setPesoKgPresentacion(e.target.value)}
+									onMouseDown={(e) => e.stopPropagation()}
+									placeholder="Ej: 20, 10, 5"
+									style={{
+										width: '100%',
+										padding: '10px',
+										backgroundColor: '#1a1a1a',
+										border: '1px solid #333',
+										borderRadius: '4px',
+										color: '#fff',
+										fontSize: '14px'
+									}}
+								/>
+							</div>
+
+							<div style={{ display: 'flex', gap: '12px' }}>
+								<button 
+									className="btn" 
+									onClick={guardarPresentacion}
+									onMouseDown={(e) => e.stopPropagation()}
+									style={{ flex: 1 }}
+								>
+									{presentacionEditar ? 'Actualizar' : 'Crear'} Presentación
+								</button>
+								{presentacionEditar && (
+									<button 
+										className="btn btn-ghost" 
+										onClick={() => {
+											setPresentacionEditar(null)
+											setNombrePresentacion('')
+											setPesoKgPresentacion('')
+										}}
+										onMouseDown={(e) => e.stopPropagation()}
+									>
+										Cancelar edición
+									</button>
+								)}
+							</div>
+						</div>
+
+						<div>
+							<h4 style={{ fontSize: '16px', marginBottom: '12px', color: '#fff' }}>
+								Presentaciones existentes
+							</h4>
+							<table className='table'>
+								<thead>
+									<tr>
+										<th>Nombre</th>
+										<th>Peso (kg)</th>
+										<th>Acciones</th>
+									</tr>
+								</thead>
+								<tbody>
+									{presentaciones.length === 0 ? (
+										<tr>
+											<td colSpan={3} className='small'>No hay presentaciones cargadas</td>
+										</tr>
+									) : (
+										presentaciones.map(pres => (
+											<tr key={pres.id}>
+												<td>{pres.nombre}</td>
+												<td>{pres.peso_kg} kg</td>
+												<td>
+													<button 
+														className='btn btn-ghost' 
+														onClick={() => abrirEditarPresentacion(pres)}
+														style={{ padding: '4px 8px', fontSize: '11px', marginRight: '8px' }}
+													>
+														Editar
+													</button>
+													<button 
+														className='btn btn-ghost' 
+														onClick={() => eliminarPresentacion(pres.id)}
+														style={{ padding: '4px 8px', fontSize: '11px', color: '#ef4444' }}
+													>
+														Eliminar
+													</button>
+												</td>
+											</tr>
+										))
+									)}
+								</tbody>
+							</table>
+						</div>
+
+						<div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+							<button className="btn btn-ghost" onClick={cerrarModalPresentaciones} onMouseDown={(e) => e.stopPropagation()}>
+								Cerrar
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Modal Crear/Editar Producto */}
+			{modalProducto && (
+				<div 
+					style={{
+						position: 'fixed',
+						top: 0,
+						left: 0,
+						right: 0,
+						bottom: 0,
+						backgroundColor: 'rgba(0,0,0,0.7)',
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						zIndex: 9999
+					}}
+					onMouseDown={cerrarModalProducto}
+				>
+					<div 
+						style={{
+							backgroundColor: '#1a1a1a',
+							padding: '24px',
+							borderRadius: '8px',
+							width: '90%',
+							maxWidth: '500px',
+							border: '1px solid #333'
+						}}
+						onMouseDown={(e) => e.stopPropagation()}
+					>
+						<h3 style={{ marginBottom: '20px', fontSize: '18px', color: '#fff' }}>
+							{productoEditar ? 'Editar Producto' : 'Crear Producto'}
+						</h3>
+
+						<div style={{ marginBottom: '20px' }}>
+							<label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: '#aaa' }}>
+								Nombre del producto
+							</label>
+							<input
+								type="text"
+								value={nombreProducto}
+								onChange={(e) => setNombreProducto(e.target.value)}
+								onMouseDown={(e) => e.stopPropagation()}
+								placeholder="Ej: Gelcoat Blanco, Resina Ortoftálica"
+								style={{
+									width: '100%',
+									padding: '10px',
+									backgroundColor: '#1a1a1a',
+									border: '1px solid #333',
+									borderRadius: '4px',
+									color: '#fff',
+									fontSize: '14px'
+								}}
+							/>
+						</div>
+
+						<div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+							<button 
+								className="btn btn-ghost" 
+								onClick={cerrarModalProducto}
+								onMouseDown={(e) => e.stopPropagation()}
+							>
+								Cancelar
+							</button>
+							<button 
+								className="btn" 
+								onClick={guardarProducto}
+								onMouseDown={(e) => e.stopPropagation()}
+							>
+								{productoEditar ? 'Actualizar' : 'Crear'} Producto
 							</button>
 						</div>
 					</div>

@@ -11,6 +11,7 @@ export default function Dashboard() {
   const [porcentajeDia, setPorcentajeDia] = useState(0);
   const [porcentajeSemana, setPorcentajeSemana] = useState(0);
   const [porcentajeMes, setPorcentajeMes] = useState(0);
+  const [movimientos, setMovimientos] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,8 +31,28 @@ export default function Dashboard() {
   useEffect(() => {
     if (user) {
       cargarEstadisticas();
+      cargarMovimientos();
     }
   }, [user]);
+
+  async function cargarMovimientos() {
+    try {
+      const { data: movData } = await supabase
+        .from('movimientos_stock')
+        .select(`
+          *,
+          productos (
+            nombre
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (movData) setMovimientos(movData);
+    } catch (err) {
+      console.error('Error cargando movimientos:', err);
+    }
+  }
 
   async function cargarEstadisticas() {
     try {
@@ -225,6 +246,135 @@ export default function Dashboard() {
           percent={`${porcentajeMes >= 0 ? '+' : ''}${porcentajeMes.toFixed(1)}%`}
           fillPercent={calcularFillPercent('mes')}
         />
+      </div>
+
+      {/* Últimos Movimientos de Stock */}
+      <div style={{ 
+        marginTop: '40px', 
+        maxWidth: '1200px', 
+        margin: '40px auto 0',
+        padding: '0 20px'
+      }}>
+        <h3 style={{ 
+          fontSize: '20px', 
+          marginBottom: '16px', 
+          color: '#fff',
+          fontWeight: '600'
+        }}>
+          📦 Últimos Movimientos de Stock
+        </h3>
+        
+        <div style={{
+          backgroundColor: '#0f0f0f',
+          borderRadius: '12px',
+          border: '1px solid #1a1a1a',
+          overflow: 'hidden'
+        }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              fontSize: '14px'
+            }}>
+              <thead>
+                <tr style={{ backgroundColor: '#141414', borderBottom: '1px solid #1a1a1a' }}>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', color: '#999', fontWeight: '500', fontSize: '12px' }}>Fecha</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', color: '#999', fontWeight: '500', fontSize: '12px' }}>Tipo</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', color: '#999', fontWeight: '500', fontSize: '12px' }}>Producto</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', color: '#999', fontWeight: '500', fontSize: '12px' }}>Cantidad</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', color: '#999', fontWeight: '500', fontSize: '12px' }}>Observaciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {movimientos.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ 
+                      padding: '24px', 
+                      textAlign: 'center', 
+                      color: '#666',
+                      fontSize: '13px'
+                    }}>
+                      No hay movimientos registrados
+                    </td>
+                  </tr>
+                ) : (
+                  movimientos.map(mov => (
+                    <tr key={mov.id} style={{ 
+                      borderBottom: '1px solid #1a1a1a',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#141414'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      <td style={{ padding: '12px 16px', color: '#ccc', fontSize: '13px' }}>
+                        {new Date(mov.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}
+                        {' '}
+                        <span style={{ color: '#666' }}>
+                          {new Date(mov.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{
+                          padding: '4px 10px',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          backgroundColor: 
+                            mov.tipo === 'ingreso' ? 'rgba(16, 185, 129, 0.15)' : 
+                            mov.tipo === 'egreso' ? 'rgba(239, 68, 68, 0.15)' : 
+                            mov.tipo === 'consolidacion' ? 'rgba(139, 92, 246, 0.15)' :
+                            'rgba(245, 158, 11, 0.15)',
+                          color: 
+                            mov.tipo === 'ingreso' ? '#10b981' : 
+                            mov.tipo === 'egreso' ? '#ef4444' : 
+                            mov.tipo === 'consolidacion' ? '#8b5cf6' :
+                            '#f59e0b',
+                          display: 'inline-block'
+                        }}>
+                          {mov.tipo === 'ingreso' ? '↗ INGRESO' : 
+                           mov.tipo === 'egreso' ? '↘ EGRESO' :
+                           mov.tipo === 'consolidacion' ? '🗜 CONSOLIDACIÓN' :
+                           mov.tipo === 'venta' ? '💰 VENTA' : '↩ DEVOLUCIÓN'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px', color: '#fff', fontSize: '13px', fontWeight: '500' }}>
+                        {mov.productos?.nombre || 'N/D'}
+                      </td>
+                      <td style={{ 
+                        padding: '12px 16px',
+                        fontSize: '13px',
+                        color: mov.cantidad < 0 ? '#ef4444' : '#10b981',
+                        fontWeight: '600'
+                      }}>
+                        {mov.cantidad > 0 ? '+' : ''}{mov.cantidad.toFixed(2)} kg
+                      </td>
+                      <td style={{ 
+                        padding: '12px 16px', 
+                        fontSize: '12px', 
+                        color: '#666',
+                        maxWidth: '300px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {mov.observaciones || '-'}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <p style={{ 
+          marginTop: '12px', 
+          fontSize: '12px', 
+          color: '#666', 
+          textAlign: 'center' 
+        }}>
+          Mostrando los últimos 10 movimientos · Ver todos en la página de Stock
+        </p>
       </div>
     </div>
   );

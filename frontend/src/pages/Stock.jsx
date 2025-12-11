@@ -21,6 +21,7 @@ export default function Stock(){
 	const [modalConfig, setModalConfig] = useState(false)
 	const [productoConfig, setProductoConfig] = useState(null)
 	const [nuevoStockMinimo, setNuevoStockMinimo] = useState(0)
+	const [presentacionPredeterminada, setPresentacionPredeterminada] = useState('')
 	const refProducto = useRef(null)
 	const refPresentacion = useRef(null)
 
@@ -70,13 +71,34 @@ export default function Stock(){
 			setLoading(true)
 			
 			// Cargar productos con stock
-			const { data: stockData } = await supabase
+			const { data: stockData, error: stockError } = await supabase
 				.from('productos')
-				.select('id, nombre, stock, stock_minimo')
+				.select('id, nombre, stock, stock_minimo, presentacion_predeterminada_id')
 				.eq('activo', true)
 				.order('nombre', { ascending: true })
 			
-			if (stockData) setProductosStock(stockData)
+			if (stockError) {
+				console.error('Error cargando stock:', stockError)
+			}
+
+			// Agregar información de presentaciones manualmente
+			if (stockData) {
+				const stockConPresentaciones = await Promise.all(
+					stockData.map(async (prod) => {
+						if (prod.presentacion_predeterminada_id) {
+							const { data: presData } = await supabase
+								.from('presentaciones')
+								.select('id, nombre, peso_kg')
+								.eq('id', prod.presentacion_predeterminada_id)
+								.single()
+							
+							return { ...prod, presentaciones: presData }
+						}
+						return { ...prod, presentaciones: null }
+					})
+				)
+				setProductosStock(stockConPresentaciones)
+			}
 
 			// Cargar últimos movimientos con información del producto
 			const { data: movData } = await supabase
@@ -128,21 +150,24 @@ export default function Stock(){
 		try {
 			const { error } = await supabase
 				.from('productos')
-				.update({ stock_minimo: nuevoStockMinimo })
+				.update({ 
+					stock_minimo: nuevoStockMinimo,
+					presentacion_predeterminada_id: presentacionPredeterminada || null
+				})
 				.eq('id', productoConfig.id)
 
 			if (error) {
-				console.error('Error actualizando stock mínimo:', error)
+				console.error('Error actualizando configuración:', error)
 				alert('Error al actualizar: ' + error.message)
 				return
 			}
 
-			alert(`✓ Stock mínimo actualizado a ${nuevoStockMinimo}kg para ${productoConfig.nombre}`)
+			alert(`✓ Configuración actualizada para ${productoConfig.nombre}`)
 			cargarStock()
 			cerrarModalConfig()
 		} catch (err) {
 			console.error('Error:', err)
-			alert('Error al actualizar stock mínimo')
+			alert('Error al actualizar configuración')
 		}
 	}
 
@@ -418,7 +443,8 @@ export default function Stock(){
 					<thead>
 						<tr>
 							<th>Producto</th>
-							<th>Stock actual</th>
+							<th>Stock actual (kg)</th>
+							<th>Stock en unidades</th>
 							<th>Stock mínimo</th>
 							<th>Estado</th>
 							<th>Acciones</th>
@@ -427,17 +453,28 @@ export default function Stock(){
 					<tbody>
 						{productosStock.length === 0 ? (
 							<tr>
-								<td colSpan={5} className='small'>No hay productos con stock</td>
+								<td colSpan={6} className='small'>No hay productos con stock</td>
 							</tr>
 						) : (
 							productosStock.map(prod => {
 								const stock = prod.stock || 0
 								const stockMinimo = prod.stock_minimo || 10
 								const esAlerta = stock < stockMinimo
+								const presentacion = prod.presentaciones
+								const unidades = presentacion?.peso_kg ? (stock / presentacion.peso_kg).toFixed(2) : '-'
 								return (
 									<tr key={prod.id}>
 										<td>{prod.nombre}</td>
 										<td>{stock.toFixed(2)} kg</td>
+										<td>
+											{presentacion ? (
+												<span style={{ color: '#10b981' }}>
+													{unidades} {presentacion.nombre}
+												</span>
+											) : (
+												<span style={{ color: '#999', fontSize: '12px' }}>Sin configurar</span>
+											)}
+										</td>
 										<td>{stockMinimo.toFixed(0)} kg</td>
 										<td>
 											{esAlerta ? (
@@ -691,11 +728,9 @@ export default function Stock(){
 						}}
 						onClick={(e) => e.stopPropagation()}
 					>
-						<h3 style={{ marginBottom: '20px', fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>
-							Configurar Stock Mínimo
-						</h3>
-
-						<div style={{ marginBottom: '16px' }}>
+					<h3 style={{ marginBottom: '20px', fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>
+						Configurar Producto
+					</h3>						<div style={{ marginBottom: '16px' }}>
 							<label className="small" style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#e5e5e5' }}>
 								Producto
 							</label>
@@ -716,6 +751,30 @@ export default function Stock(){
 								onChange={(e) => setNuevoStockMinimo(parseFloat(e.target.value) || 0)}
 								style={inputStyle}
 							/>
+						</div>
+
+						<div style={{ marginBottom: '20px' }}>
+							<label className="small" style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#e5e5e5' }}>
+								Presentación predeterminada
+							</label>
+							<select
+								value={presentacionPredeterminada}
+								onChange={(e) => setPresentacionPredeterminada(e.target.value)}
+								style={{
+									...inputStyle,
+									cursor: 'pointer'
+								}}
+							>
+								<option value="">Sin presentación predeterminada</option>
+								{presentaciones.map(pres => (
+									<option key={pres.id} value={pres.id}>
+										{pres.nombre} ({pres.peso_kg} kg)
+									</option>
+								))}
+							</select>
+							<div className="small" style={{ marginTop: '6px', color: '#999' }}>
+								Se usará para mostrar el stock en unidades de esta presentación
+							</div>
 						</div>
 
 						<div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>

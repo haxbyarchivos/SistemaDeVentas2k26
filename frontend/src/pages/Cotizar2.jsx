@@ -376,6 +376,7 @@ export default function Cotizar2(){
 	function exportarPDF(){
 		const fecha = new Date().toLocaleDateString('es-AR')
 		const clienteNombre = searchCliente || 'Sin especificar'
+		const tituloArchivo = searchCliente ? `${clienteNombre} - ${fecha}` : `Cotizacion - ${fecha}`
 		
 		const ventana = window.open()
 		ventana.document.write(`
@@ -383,7 +384,7 @@ export default function Cotizar2(){
 			<html>
 			<head>
 				<meta charset="UTF-8">
-				<title>Cotización - ${fecha}</title>
+				<title>${tituloArchivo}</title>
 				<style>
 					* { margin: 0; padding: 0; box-sizing: border-box; }
 					body { 
