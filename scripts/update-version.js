@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
-// Ruta al archivo de versión
+// Rutas
 const versionPath = path.join(__dirname, '../frontend/src/version.json');
+const swPath = path.join(__dirname, '../frontend/public/sw.js');
 
 try {
   // Leer el archivo de versión actual
@@ -16,6 +17,20 @@ try {
   
   // Guardar el archivo actualizado
   fs.writeFileSync(versionPath, JSON.stringify(versionData, null, 2) + '\n');
+  
+  // Actualizar versión en Service Worker
+  try {
+    let swContent = fs.readFileSync(swPath, 'utf8');
+    const newVersion = `${versionData.version}.${versionData.build}`;
+    swContent = swContent.replace(
+      /const CACHE_VERSION = '[^']+'/,
+      `const CACHE_VERSION = '${newVersion}'`
+    );
+    fs.writeFileSync(swPath, swContent);
+    console.log(`✓ Service Worker actualizado: ${newVersion}`);
+  } catch (swError) {
+    console.warn('⚠ No se pudo actualizar Service Worker:', swError.message);
+  }
   
   console.log(`✓ Versión actualizada: ${versionData.version} (build ${versionData.build})`);
   process.exit(0);

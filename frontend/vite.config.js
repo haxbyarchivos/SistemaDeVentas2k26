@@ -13,4 +13,17 @@ export default defineConfig({
     host: true, // Escucha en todas las interfaces (0.0.0.0)
     port: 5173,
   },
+  build: {
+    // Generar manifesto para mejor cache busting
+    manifest: true,
+    // Agregar hash a los assets para forzar actualización
+    rollupOptions: {
+      output: {
+        // Nombres con hash para cache busting
+        entryFileNames: `assets/[name].[hash].js`,
+        chunkFileNames: `assets/[name].[hash].js`,
+        assetFileNames: `assets/[name].[hash].[ext]`
+      }
+    }
+  }
 });
