@@ -2,7 +2,7 @@
 // Estrategia: Network First (prioriza red, fallback a caché)
 
 const CACHE_NAME = 'coloplastic-v1';
-const CACHE_VERSION = '1.0.0.5'; // Actualizar con cada deploy
+const CACHE_VERSION = '1.0.0.7'; // Actualizar con cada deploy
 
 // Instalar el service worker
 self.addEventListener('install', (event) => {
@@ -28,10 +28,23 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// Estrategia Network First
+// Estrategia Network First con bypass de caché para archivos críticos
 self.addEventListener('fetch', (event) => {
   // Solo cachear requests GET
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  
+  // NUNCA cachear version.json - siempre desde red
+  if (url.pathname.includes('version.json')) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .catch(() => new Response('{"version":"1.0.0","build":"0"}', {
+          headers: { 'Content-Type': 'application/json' }
+        }))
+    );
+    return;
+  }
 
   event.respondWith(
     fetch(event.request)
