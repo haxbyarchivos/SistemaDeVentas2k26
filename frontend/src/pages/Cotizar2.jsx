@@ -350,13 +350,14 @@ export default function Cotizar2(){
 		let msg = `*COTIZACIÓN - ${fecha}*\n\n`
 		msg += `*Detalles:*\n`
 		items.forEach((it, idx) => {
+			const precioArsActual = it.precio_item_usd * (Number(valorDolar) || 0)
 			msg += `${idx + 1}. ${it.producto}\n`
 			if(esProductoPorUnidad(it.producto)){
 				msg += ` x ${it.cantidad} ${it.cantidad === 1 ? 'unidad' : 'unidades'}\n`
 			} else {
 				msg += ` x ${formatKilos(it.kilos)}kg\n`
 			}
-			msg += `$${formatARS(it.precio_item_ars)} ARS\n\n`
+			msg += `$${formatARS(precioArsActual)} ARS\n\n`
 		})
 		msg += `*TOTALES:*\n`
 		msg += `ARS: $${formatARS(totalARS())}`
@@ -541,13 +542,14 @@ export default function Cotizar2(){
 					</thead>
 					<tbody>
 						${items.map((it, idx) => {
+							const precioArsActual = it.precio_item_usd * (Number(valorDolar) || 0)
 							const cantidadTexto = esProductoPorUnidad(it.producto) 
 								? `${it.cantidad} ${it.cantidad === 1 ? 'unidad' : 'unidades'}` 
 								: `${formatKilos(it.kilos)}kg`
 							
 							const precioUnitario = esProductoPorUnidad(it.producto) 
-								? it.precio_item_ars / it.cantidad
-								: it.precio_item_ars / it.kilos
+								? precioArsActual / it.cantidad
+								: precioArsActual / it.kilos
 							
 							return `
 								<tr>
@@ -555,7 +557,7 @@ export default function Cotizar2(){
 									<td><strong>${it.producto}</strong></td>
 									<td class="text-right">${cantidadTexto}</td>
 									<td class="text-right">$${formatARS(precioUnitario)}</td>
-									<td class="text-right"><strong>$${formatARS(it.precio_item_ars)}</strong></td>
+									<td class="text-right"><strong>$${formatARS(precioArsActual)}</strong></td>
 								</tr>
 							`
 						}).join('')}
@@ -803,22 +805,25 @@ export default function Cotizar2(){
 								</tr>
 							</thead>
 							<tbody>
-								{items.map(it => (
+							{items.map(it => {
+								const precioArsActual = it.precio_item_usd * (Number(valorDolar) || 0)
+								return (
 									<tr key={it.id} style={{borderBottom:'1px solid #333'}}>
-							<td style={{padding:'8px'}}>{it.producto}</td>
-							<td style={{padding:'8px'}}>{it.presentacion}</td>
-							<td style={{padding:'8px'}}>{it.cantidad}</td>
-							<td style={{padding:'8px'}}>
-								{esProductoPorUnidad(it.producto) 
-									? `${it.cantidad} ${it.cantidad === 1 ? 'un.' : 'un.'}` 
-									: `${formatKilos(it.kilos)}kg`
-								}
-							</td>
-							<td style={{padding:'8px'}}>${it.precio_item_usd.toFixed(2)}</td>
-										<td style={{padding:'8px'}}>${formatARS(it.precio_item_ars)}</td>
+										<td style={{padding:'8px'}}>{it.producto}</td>
+										<td style={{padding:'8px'}}>{it.presentacion}</td>
+										<td style={{padding:'8px'}}>{it.cantidad}</td>
+										<td style={{padding:'8px'}}>
+											{esProductoPorUnidad(it.producto) 
+												? `${it.cantidad} ${it.cantidad === 1 ? 'un.' : 'un.'}` 
+												: `${formatKilos(it.kilos)}kg`
+											}
+										</td>
+										<td style={{padding:'8px'}}>${it.precio_item_usd.toFixed(2)}</td>
+										<td style={{padding:'8px'}}>${formatARS(precioArsActual)}</td>
 										<td style={{padding:'8px'}}><button className='btn btn-ghost' style={{fontSize:'11px'}} onClick={()=>eliminarItem(it.id)}>X</button></td>
 									</tr>
-								))}
+								)
+							})}
 							</tbody>
 						</table>
 						</div>

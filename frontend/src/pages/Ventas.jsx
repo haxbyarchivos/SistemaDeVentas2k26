@@ -242,6 +242,18 @@ export default function Ventas() {
     if (!window.confirm('¿Estás seguro de eliminar esta venta?')) return
 
     try {
+      // Primero eliminar los movimientos de stock relacionados
+      const { error: errorMovimientos } = await supabase
+        .from('movimientos_stock')
+        .delete()
+        .eq('venta_id', ventaId)
+
+      if (errorMovimientos) {
+        alert('Error al eliminar movimientos de stock: ' + errorMovimientos.message)
+        return
+      }
+
+      // Ahora eliminar la venta
       const { error } = await supabase
         .from('ventas')
         .delete()

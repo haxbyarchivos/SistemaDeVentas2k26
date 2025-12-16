@@ -188,9 +188,10 @@ export default function Cotizar(){
 		msg += `Dólar: $${valorDolar}\n\n`
 		msg += `*Detalles:*\n`
 		items.forEach((it, idx) => {
+			const precioArsActual = it.precio_item_usd * (Number(valorDolar) || 0)
 			msg += `${idx + 1}. ${it.producto_nombre} - ${it.presentacion_nombre}\n`
 			msg += `   Cant: ${it.cantidad} x ${it.peso_por_unidad}kg = ${it.kilos.toFixed(3)}kg\n`
-			msg += `   Precio: $${it.precio_item_usd.toFixed(2)} USD / $${it.precio_item_ars.toFixed(2)} ARS\n\n`
+			msg += `   Precio: $${it.precio_item_usd.toFixed(2)} USD / $${precioArsActual.toFixed(2)} ARS\n\n`
 		})
 		msg += `*TOTALES:*\n`
 		msg += `USD: $${totalUSD().toFixed(2)}\n`
@@ -336,17 +337,20 @@ export default function Cotizar(){
 						{items.length === 0 && (
 							<tr><td colSpan={6} className='small'>No hay items agregados.</td></tr>
 						)}
-						{items.map(it => (
+					{items.map(it => {
+						const precioArsActual = it.precio_item_usd * (Number(valorDolar) || 0)
+						return (
 							<tr key={it.id}>
 								<td>{it.presentacion_nombre}</td>
 								<td>{it.cantidad}</td>
 								<td>{it.kilos.toFixed(3)}</td>
 								<td>{(it.precio_unit_usd || 0).toFixed(2)}</td>
-								<td>{( (it.precio_unit_usd || 0) * it.kilos ).toFixed(2)}</td>
-								<td>{( ((it.precio_unit_usd || 0) * it.kilos) * (Number(valorDolar) || 0) ).toFixed(2)} ARS</td>
+								<td>{it.precio_item_usd.toFixed(2)}</td>
+								<td>{precioArsActual.toFixed(2)} ARS</td>
 								<td><button className='btn btn-ghost' onClick={()=>eliminarItem(it.id)}>Eliminar</button></td>
 							</tr>
-						))}
+						)
+					})}
 					</tbody>
 				</table>
 
