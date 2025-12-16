@@ -10,18 +10,22 @@ function App() {
     const checkVersion = async () => {
       try {
         // Agregar timestamp para evitar caché
-        const response = await fetch(`/src/version.json?t=${Date.now()}`);
+        const response = await fetch(`/version.json?t=${Date.now()}`);
         const serverVersion = await response.json();
         
         const localVersion = `${versionInfo.version}.${versionInfo.build}`;
         const remoteVersion = `${serverVersion.version}.${serverVersion.build}`;
         
-        console.log('Versión local:', localVersion);
-        console.log('Versión servidor:', remoteVersion);
+        console.log('🔍 Verificación de versión:');
+        console.log('   Local:', localVersion);
+        console.log('   Servidor:', remoteVersion);
         
         // Si la versión del servidor es diferente, mostrar prompt
         if (localVersion !== remoteVersion) {
+          console.log('🔄 Nueva versión disponible!');
           setShowUpdatePrompt(true);
+        } else {
+          console.log('✅ App actualizada');
         }
       } catch (error) {
         console.log('No se pudo verificar versión:', error);
@@ -60,26 +64,36 @@ function App() {
           zIndex: 99999,
           backgroundColor: '#4da6ff',
           color: 'white',
-          padding: '12px 16px',
+          padding: '16px',
           display: 'flex',
-          justifyContent: 'space-between',
+          flexDirection: 'column',
+          gap: '8px',
           alignItems: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+          boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+          animation: 'slideDown 0.3s ease-out'
         }}>
-          <span>🔄 Nueva versión disponible</span>
+          <div style={{ fontWeight: 'bold', fontSize: '16px' }}>
+            🔄 Nueva versión disponible
+          </div>
+          <div style={{ fontSize: '13px', opacity: 0.9 }}>
+            Toca "Actualizar" para cargar la última versión
+          </div>
           <button 
             onClick={handleUpdate}
             style={{
               backgroundColor: 'white',
               color: '#4da6ff',
               border: 'none',
-              padding: '6px 16px',
-              borderRadius: '4px',
+              padding: '10px 24px',
+              borderRadius: '8px',
               fontWeight: 'bold',
-              cursor: 'pointer'
+              fontSize: '15px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              marginTop: '4px'
             }}
           >
-            Actualizar
+            Actualizar Ahora
           </button>
         </div>
       )}

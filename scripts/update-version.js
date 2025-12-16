@@ -18,6 +18,10 @@ try {
   // Guardar el archivo actualizado
   fs.writeFileSync(versionPath, JSON.stringify(versionData, null, 2) + '\n');
   
+  // Copiar version.json a public para que sea accesible en producción
+  const publicVersionPath = path.join(__dirname, '../frontend/public/version.json');
+  fs.writeFileSync(publicVersionPath, JSON.stringify(versionData, null, 2) + '\n');
+  
   // Actualizar versión en Service Worker
   try {
     let swContent = fs.readFileSync(swPath, 'utf8');
