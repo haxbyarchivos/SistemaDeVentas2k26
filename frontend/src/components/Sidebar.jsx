@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
+import versionInfo from '../version.json';
 
 export default function Sidebar({ isMobile = false, isOpen = false, onClose = () => {} }) {
   const navigate = useNavigate();
@@ -248,7 +249,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose = ()
             }}
           >
             <p style={{ margin: "0 0 3px 0", fontWeight: "bold", color: "#999" }}>Sistema de Ventas</p>
-            <p style={{ margin: 0 }}>v1.0.0</p>
+            <p style={{ margin: 0 }}>v{versionInfo.version}.{versionInfo.build}</p>
             <p style={{ margin: "3px 0 0 0", fontSize: "10px", color: "#555" }}>© 2K26</p>
           </div>
         )}

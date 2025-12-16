@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import supabase from '../utils/supabaseClient'
+import versionInfo from '../version.json'
 
 export default function Configuracion() {
   const [tema, setTema] = useState('oscuro')
@@ -636,7 +637,10 @@ export default function Configuracion() {
       >
         <strong>ℹ️ Información del Sistema:</strong>
         <p style={{ marginTop: '8px', marginBottom: 0 }}>
-          Versión: 1.0.0 | Sistema de Ventas 2K26
+          Versión: {versionInfo.version}.{versionInfo.build} | Build: {new Date(versionInfo.date).toLocaleDateString('es-AR')}
+        </p>
+        <p style={{ marginTop: '4px', marginBottom: 0, fontSize: '12px' }}>
+          Sistema de Ventas 2K26
         </p>
       </div>
 
