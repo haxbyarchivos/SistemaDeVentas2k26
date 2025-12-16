@@ -1,28 +1,41 @@
 # Sistema de Versionado Automático
 
-Este sistema actualiza automáticamente la versión del sistema cada vez que haces un `git push`.
+Este sistema actualiza automáticamente la versión del sistema.
 
-## 🚀 Configuración Inicial
+## 🚀 Uso Recomendado (Windows)
 
-### Opción 1: Hook Automático (Recomendado)
+### Opción 1: Script Todo-en-Uno (Más Fácil)
 
-Ejecuta el instalador desde la raíz del proyecto:
+Usa el script que actualiza versión y hace push automáticamente:
 
 ```powershell
-.\install-hook.ps1
+# Desde la raíz del proyecto
+.\update-and-push.ps1 "tu mensaje de commit"
+
+# Ejemplo:
+.\update-and-push.ps1 "feat: agregar nueva funcionalidad"
 ```
 
-Esto instalará un hook de git que actualizará la versión automáticamente en cada push.
+Este script:
+1. ✅ Actualiza la versión automáticamente
+2. ✅ Hace git add de todos los cambios
+3. ✅ Hace commit con tu mensaje
+4. ✅ Hace push a origin main
 
-### Opción 2: Manual
+### Opción 2: Manual Paso a Paso
 
-Si prefieres actualizar la versión manualmente antes de cada commit:
+Si prefieres control total:
 
-```bash
+```powershell
+# 1. Actualizar versión
 cd frontend
 npm run version:bump
-git add src/version.json
-git commit -m "chore: actualizar versión"
+
+# 2. Commit normal
+cd ..
+git add -A
+git commit -m "tu mensaje"
+git push origin main
 ```
 
 ## 📊 Cómo Funciona
@@ -43,13 +56,22 @@ git commit -m "chore: actualizar versión"
 
 ## 🔄 Actualizar Versión Principal
 
-Para actualizar la versión principal (ej: de 1.0.0 a 1.1.0):
+Para acAtajos Útiles
 
-1. Edita `frontend/src/version.json`
-2. Cambia el campo `version` al nuevo número
-3. El `build` se seguirá incrementando automáticamente
+### Crear Alias (Opcional)
 
-## ✅ Verificar que Funciona
+Para no escribir tanto, puedes crear un alias en PowerShell:
+
+```powershell
+# Agregar al perfil de PowerShell
+notepad $PROFILE
+
+# Agregar esta línea:
+function gp { & "V:\AA SISTEMA DE VENTAS 2K26\SISTEMA VENTAS\update-and-push.ps1" @args }
+
+# Luego usar simplemente:
+gp "mensaje de commit"
+```
 
 1. Haz un cambio en cualquier archivo
 2. Haz commit: `git commit -am "test"`
