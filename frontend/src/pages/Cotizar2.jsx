@@ -25,6 +25,10 @@ export default function Cotizar2(){
 	const [selectedListaPrecioId, setSelectedListaPrecioId] = useState(null)
 	const [preciosPorProducto, setPreciosPorProducto] = useState({})
 	const [selectedClientId, setSelectedClientId] = useState(null)
+	const [fechaVenta, setFechaVenta] = useState(() => {
+		const today = new Date()
+		return today.toISOString().split('T')[0]
+	})
 	const refProducto = useRef(null)
 	const refPresentacion = useRef(null)
 	const refCliente = useRef(null)
@@ -346,7 +350,7 @@ export default function Cotizar2(){
 	}
 
 	function generarMensajeWhatsApp(){
-		const fecha = new Date().toLocaleDateString('es-AR')
+		const fecha = new Date(fechaVenta + 'T00:00:00').toLocaleDateString('es-AR')
 		let msg = `*COTIZACIÓN - ${fecha}*\n\n`
 		msg += `*Detalles:*\n`
 		items.forEach((it, idx) => {
@@ -375,7 +379,7 @@ export default function Cotizar2(){
 	}
 
 	function exportarPDF(){
-		const fecha = new Date().toLocaleDateString('es-AR')
+		const fecha = new Date(fechaVenta + 'T00:00:00').toLocaleDateString('es-AR')
 		const clienteNombre = searchCliente || 'Sin especificar'
 		const tituloArchivo = searchCliente ? `${clienteNombre} - ${fecha}` : `Cotizacion - ${fecha}`
 		
@@ -702,6 +706,19 @@ export default function Cotizar2(){
 	return (
 		<PageContainer title="Cotizador" subtitle="Crear cotizaciones precisas" footer={footerContent}>
 			<div style={{display:'grid', gap:12}}>
+				
+				{/* Selector de fecha */}
+			<div style={{display:'flex', alignItems:'center', gap:8, padding:'12px', backgroundColor:'#1a1a1a', borderRadius:'6px', border:'1px solid #333'}}>
+				<label className='small' style={{margin:0, fontWeight:'600', color:'#fff'}}>Fecha de la venta:</label>
+				<input 
+					type='date' 
+					value={fechaVenta} 
+					onChange={e => setFechaVenta(e.target.value)}
+					className='input'
+					style={{width:'160px', backgroundColor:'#000', color:'#fff', border:'1px solid #444', colorScheme:'dark'}}
+				/>
+			</div>
+
 				{/* Formulario */}
 				<div style={{display:'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap:8, padding:'12px', backgroundColor:'#1a1a1a', borderRadius:'8px', alignItems:'end', border:'1px solid #333'}}>
 					{/* Producto con búsqueda */}

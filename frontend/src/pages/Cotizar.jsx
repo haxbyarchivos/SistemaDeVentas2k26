@@ -25,6 +25,10 @@ export default function Cotizar(){
 	const [showProductosDropdown, setShowProductosDropdown] = useState(false)
 	const [searchPresentacion, setSearchPresentacion] = useState('')
 	const [showPresentacionDropdown, setShowPresentacionDropdown] = useState(false)
+	const [fechaVenta, setFechaVenta] = useState(() => {
+		const today = new Date()
+		return today.toISOString().split('T')[0]
+	})
 
 	useEffect(()=> {
 		async function fetchPresentaciones(){
@@ -183,7 +187,7 @@ export default function Cotizar(){
 	}
 
 	function generarMensajeWhatsApp(){
-		const fecha = new Date().toLocaleDateString('es-AR')
+		const fecha = new Date(fechaVenta + 'T00:00:00').toLocaleDateString('es-AR')
 		let msg = `*COTIZACIÓN - ${fecha}*\n\n`
 		msg += `Dólar: $${valorDolar}\n\n`
 		msg += `*Detalles:*\n`
@@ -255,6 +259,19 @@ export default function Cotizar(){
 		<PageContainer title="Cotizador" subtitle="Crear cotizaciones precisas" footer={footerContent}>
 
 			<div style={{display:'grid', gap:12}}>
+				
+				{/* Selector de fecha */}
+				<div style={{display:'flex', alignItems:'center', gap:8, padding:'12px', backgroundColor:'#f5f5f5', borderRadius:'6px'}}>
+					<label className='small' style={{margin:0, fontWeight:'600'}}>Fecha de la venta:</label>
+					<input 
+						type='date' 
+						value={fechaVenta} 
+						onChange={e => setFechaVenta(e.target.value)}
+						className='input'
+						style={{width:'160px'}}
+					/>
+				</div>
+
 						<div style={{display:'grid', gridTemplateColumns: '1fr 1fr 120px 120px', gap:8, alignItems:'end'}}>
 							<div>
 								<label className='small'>Producto</label>
@@ -287,7 +304,7 @@ export default function Cotizar(){
 												<div 
 													key={p.id}
 													onClick={() => selectPresentacion(p)}
-													style={{padding:'8px', cursor:'pointer', borderBottom:'1px solid #eee', backgroundColor: selectedId === p.id ? '#e0e0e0' : 'white'}}
+													style={{padding:'8px', cursor:'pointer', borderBottom:'1px solid #eee', backgroundColor: selectedPresentacionId === p.id ? '#e0e0e0' : 'white'}}
 												>
 													{p.nombre} ({p.peso} kg)
 												</div>
@@ -304,20 +321,14 @@ export default function Cotizar(){
 					</div>
 
 					<div>
-						<label className='small'>Peso / unidad (kg)</label>
-						<input type='number' step='0.001' value={pesoPorUnidad} onChange={e=>setPesoPorUnidad(e.target.value)} className='input' />
-					</div>
-
-					<div>
 						<label className='small'>Precio unit. (USD por kg)</label>
 						<input type='number' step='0.01' value={precioUnitUSD} onChange={e=>setPrecioUnitUSD(e.target.value)} className='input' />
 					</div>
 				</div>
 
 				<div style={{display:'flex', gap:8}}>
-					<button className='btn' onClick={agregarItem}>Agregar item</button>
-					<button className='btn'>Guardar cotización</button>
-					<button className='btn'>Exportar (PDF / JSON)</button>
+					<button className='btn' onClick={agregarAlCarrito}>Agregar item</button>
+					<button className='btn btn-ghost' onClick={vaciarCarrito}>Vaciar carrito</button>
 				</div>
 
 				<div className='small'>Kilos por item: <strong>{kilosTotales().toFixed(3)}</strong> kg</div>
@@ -330,12 +341,13 @@ export default function Cotizar(){
 							<th>Kg</th>
 							<th>Precio unit. (USD/kg)</th>
 							<th>Precio item (USD)</th>
+							<th>Precio item (ARS)</th>
 							<th>Acciones</th>
 						</tr>
 					</thead>
 					<tbody>
 						{items.length === 0 && (
-							<tr><td colSpan={6} className='small'>No hay items agregados.</td></tr>
+							<tr><td colSpan={7} className='small'>No hay items agregados.</td></tr>
 						)}
 					{items.map(it => {
 						const precioArsActual = it.precio_item_usd * (Number(valorDolar) || 0)
@@ -358,6 +370,15 @@ export default function Cotizar(){
 					<div className='title'>Total USD: ${totalUSD().toFixed(2)}</div>
 					<div className='title'>Total ARS: ${ (totalUSD() * (Number(valorDolar) || 0)).toFixed(2) }</div>
 				</div>
+
+				{/* Botones de acción */}
+				{items.length > 0 && (
+					<div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:12}}>
+						<button className='btn btn-ghost' onClick={copiarAlPortapapeles}>Copiar al portapapeles</button>
+						<button className='btn' onClick={exportarPDF}>Exportar PDF</button>
+						<button className='btn' onClick={guardarVenta}>Guardar Venta</button>
+					</div>
+				)}
 
 			</div>
 
