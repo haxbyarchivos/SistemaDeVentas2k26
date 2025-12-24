@@ -12,6 +12,8 @@ import Clientes from "../pages/Clientes";
 import Cotizar from "../pages/Cotizar";
 import Cotizar2 from "../pages/Cotizar2";
 import Configuracion from "../pages/Configuracion";
+import CuentasClientes from "../pages/CuentasClientes";
+import CuentasMovimientos from "../pages/CuentasMovimientos";
 
 export default function AppRoutes() {
   return (
@@ -98,6 +100,26 @@ export default function AppRoutes() {
             <ProtectedRoute>
               <Layout>
                 <Configuracion />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cuentas/clientes"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <CuentasClientes />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cuentas/movimientos"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <CuentasMovimientos />
               </Layout>
             </ProtectedRoute>
           }

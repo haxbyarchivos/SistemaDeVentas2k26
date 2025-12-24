@@ -7,6 +7,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose = ()
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [sessionTime, setSessionTime] = useState("0s");
+  const [cuentasExpanded, setCuentasExpanded] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
@@ -54,10 +55,15 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose = ()
     { label: "📈 Stock", to: "/stock" },
     { label: "👤 Clientes", to: "/clientes" },
     { label: "💲 Cotizar", to: "/cotizar2" },
-    { label: "⚙️ Configuración", to: "/configuracion" },
+  ];
+
+  const cuentasSubmenu = [
+    { label: "💰 Saldos Clientes", to: "/cuentas/clientes" },
+    { label: "📊 Movimientos", to: "/cuentas/movimientos" },
   ];
 
   const isActive = (path) => location.pathname === path;
+  const isCuentasActive = () => location.pathname.startsWith('/cuentas');
 
   const sidebarStyle = {
     position: isMobile ? "fixed" : "fixed",
@@ -161,6 +167,120 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose = ()
             {collapsed && !isMobile ? item.label.split(" ")[0] : item.label}
           </button>
         ))}
+
+        {/* MENÚ CUENTAS COLAPSABLE */}
+        {!collapsed && (
+          <>
+            <button
+              onClick={() => setCuentasExpanded(!cuentasExpanded)}
+              style={{
+                width: "100%",
+                padding: "15px 20px",
+                background: isCuentasActive() ? "#2d2d2d" : "transparent",
+                border: "none",
+                borderLeft: isCuentasActive() ? "4px solid #fff" : "4px solid transparent",
+                color: isCuentasActive() ? "white" : "#999",
+                textAlign: "left",
+                cursor: "pointer",
+                fontSize: isMobile ? "20px" : "18px",
+                fontWeight: isCuentasActive() ? "bold" : "normal",
+                transition: "all 0.2s ease",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+              onMouseEnter={(e) => {
+                if (!isCuentasActive()) {
+                  e.target.style.backgroundColor = "#262626";
+                  e.target.style.color = "white";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isCuentasActive()) {
+                  e.target.style.backgroundColor = "transparent";
+                  e.target.style.color = "#999";
+                }
+              }}
+            >
+              <span>💳 Cuentas</span>
+              <span style={{ fontSize: "14px" }}>{cuentasExpanded ? "▼" : "▶"}</span>
+            </button>
+
+            {cuentasExpanded && (
+              <div style={{ backgroundColor: "#1a1a1a" }}>
+                {cuentasSubmenu.map((subItem) => (
+                  <button
+                    key={subItem.to}
+                    onClick={() => handleNavigate(subItem.to)}
+                    style={{
+                      width: "100%",
+                      padding: "12px 20px 12px 40px",
+                      background: isActive(subItem.to) ? "#2d2d2d" : "transparent",
+                      border: "none",
+                      borderLeft: isActive(subItem.to) ? "4px solid #4da6ff" : "4px solid transparent",
+                      color: isActive(subItem.to) ? "white" : "#999",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      fontSize: isMobile ? "18px" : "16px",
+                      fontWeight: isActive(subItem.to) ? "bold" : "normal",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive(subItem.to)) {
+                        e.target.style.backgroundColor = "#262626";
+                        e.target.style.color = "white";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive(subItem.to)) {
+                        e.target.style.backgroundColor = "transparent";
+                        e.target.style.color = "#999";
+                      }
+                    }}
+                  >
+                    {subItem.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* CONFIGURACIÓN AL FINAL */}
+        <button
+          onClick={() => handleNavigate("/configuracion")}
+          style={{
+            width: "100%",
+            padding: "15px 20px",
+            background: isActive("/configuracion") ? "#2d2d2d" : "transparent",
+            border: "none",
+            borderLeft: isActive("/configuracion") ? "4px solid #fff" : "4px solid transparent",
+            color: isActive("/configuracion") ? "white" : "#999",
+            textAlign: collapsed && !isMobile ? "center" : "left",
+            cursor: "pointer",
+            fontSize: isMobile ? "20px" : "18px",
+            fontWeight: isActive("/configuracion") ? "bold" : "normal",
+            transition: "all 0.2s ease",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+          onMouseEnter={(e) => {
+            if (!isActive("/configuracion")) {
+              e.target.style.backgroundColor = "#262626";
+              e.target.style.color = "white";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isActive("/configuracion")) {
+              e.target.style.backgroundColor = "transparent";
+              e.target.style.color = "#999";
+            }
+          }}
+          title={collapsed && !isMobile ? "⚙️ Configuración" : ""}
+        >
+          {collapsed && !isMobile ? "⚙️" : "⚙️ Configuración"}
+        </button>
       </nav>
 
       {/* FOOTER DEL SIDEBAR - USUARIO Y LOGOUT */}

@@ -2,7 +2,7 @@
 // Estrategia: Network First (prioriza red, fallback a caché)
 
 const CACHE_NAME = 'coloplastic-v1';
-const CACHE_VERSION = '1.0.0.10'; // Actualizar con cada deploy
+const CACHE_VERSION = '1.0.0.11'; // Actualizar con cada deploy
 
 // Instalar el service worker
 self.addEventListener('install', (event) => {
