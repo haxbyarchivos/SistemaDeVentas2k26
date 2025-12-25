@@ -10,6 +10,7 @@ export default function CuentasMovimientos() {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [estadisticas, setEstadisticas] = useState(null);
+  const [hoveredRow, setHoveredRow] = useState(null);
 
   // Filtros
   const [filtroCliente, setFiltroCliente] = useState('');
@@ -31,18 +32,26 @@ export default function CuentasMovimientos() {
     setLoading(false);
   }
 
-  async function cargarMovimientos() {
+  async function cargarMovimientos(aplicarFiltrosActivos = false) {
     const filtros = {};
-    if (filtroCliente) filtros.cliente_id = filtroCliente;
-    if (filtroTipo) filtros.tipo = filtroTipo;
-    if (filtroFechaDesde) filtros.fecha_desde = filtroFechaDesde;
-    if (filtroFechaHasta) filtros.fecha_hasta = filtroFechaHasta;
+    
+    // Solo aplicar filtros si se pide explícitamente
+    if (aplicarFiltrosActivos) {
+      if (filtroCliente) filtros.cliente_id = filtroCliente;
+      if (filtroTipo) filtros.tipo = filtroTipo;
+      if (filtroFechaDesde) filtros.fecha_desde = filtroFechaDesde;
+      if (filtroFechaHasta) filtros.fecha_hasta = filtroFechaHasta;
+    }
 
+    console.log('🔍 Cargando movimientos con filtros:', filtros);
+    
     const { data, error } = await obtenerMovimientos(filtros);
     if (!error && data) {
+      console.log('✅ Movimientos cargados:', data.length);
       setMovimientos(data);
     } else {
-      console.error('Error cargando movimientos:', error);
+      console.error('❌ Error cargando movimientos:', error);
+      setMovimientos([]);
     }
   }
 
@@ -83,15 +92,18 @@ export default function CuentasMovimientos() {
   }
 
   function aplicarFiltros() {
-    cargarMovimientos();
+    console.log('🔍 Aplicando filtros...');
+    cargarMovimientos(true);
   }
 
   function limpiarFiltros() {
+    console.log('🗑️ Limpiando filtros...');
     setFiltroCliente('');
     setFiltroTipo('');
     setFiltroFechaDesde('');
     setFiltroFechaHasta('');
-    setTimeout(() => cargarMovimientos(), 100);
+    // Cargar todos los movimientos sin filtros
+    setTimeout(() => cargarMovimientos(false), 100);
   }
 
   return (
@@ -279,27 +291,43 @@ export default function CuentasMovimientos() {
 
       {/* TABLA DE MOVIMIENTOS */}
       {loading ? (
-        <p style={{ color: '#999', textAlign: 'center', padding: '40px' }}>Cargando movimientos...</p>
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '60px 20px',
+          backgroundColor: '#2d2d2d',
+          borderRadius: '10px',
+          border: '1px solid #444'
+        }}>
+          <p style={{ color: '#999', fontSize: '16px', marginBottom: '10px' }}>⏳ Cargando movimientos...</p>
+          <p style={{ color: '#666', fontSize: '13px' }}>Consultando base de datos...</p>
+        </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
-          <table className="data-table">
+          <table className="data-table" style={{ borderCollapse: 'separate', borderSpacing: '0 8px' }}>
             <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Cliente</th>
-                <th>Tipo</th>
-                <th>Descripción</th>
-                <th style={{ textAlign: 'right' }}>Monto</th>
-                <th>Venta</th>
-                <th>Usuario</th>
-                <th>Acciones</th>
+              <tr style={{ backgroundColor: 'transparent' }}>
+                <th style={{ paddingBottom: '15px', borderBottom: '2px solid #444' }}>Fecha</th>
+                <th style={{ paddingBottom: '15px', borderBottom: '2px solid #444' }}>Cliente</th>
+                <th style={{ paddingBottom: '15px', borderBottom: '2px solid #444' }}>Tipo</th>
+                <th style={{ paddingBottom: '15px', borderBottom: '2px solid #444' }}>Descripción</th>
+                <th style={{ textAlign: 'right', paddingBottom: '15px', borderBottom: '2px solid #444' }}>Monto</th>
+                <th style={{ paddingBottom: '15px', borderBottom: '2px solid #444' }}>Venta</th>
+                <th style={{ paddingBottom: '15px', borderBottom: '2px solid #444' }}>Usuario</th>
+                <th style={{ paddingBottom: '15px', borderBottom: '2px solid #444' }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {movimientos.length === 0 ? (
                 <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', color: '#999', padding: '40px' }}>
-                    No hay movimientos registrados
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '60px 20px' }}>
+                    <div>
+                      <p style={{ color: '#999', fontSize: '16px', marginBottom: '10px' }}>📭 No hay movimientos registrados</p>
+                      <p style={{ color: '#666', fontSize: '13px' }}>
+                        {(filtroCliente || filtroTipo || filtroFechaDesde || filtroFechaHasta) 
+                          ? 'Intenta modificar los filtros para ver más resultados'
+                          : 'Aún no se han registrado movimientos en el sistema'}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -309,8 +337,24 @@ export default function CuentasMovimientos() {
                   const tieneVenta = mov.venta_id !== null;
 
                   return (
-                    <tr key={mov.id}>
-                      <td style={{ fontSize: '13px' }}>
+                    <tr 
+                      key={mov.id} 
+                      onMouseEnter={() => setHoveredRow(mov.id)}
+                      onMouseLeave={() => setHoveredRow(null)}
+                      style={{
+                        backgroundColor: hoveredRow === mov.id ? '#353535' : '#2d2d2d',
+                        border: '1px solid #3a3a3a',
+                        transition: 'all 0.2s ease',
+                        cursor: 'default'
+                      }}
+                    >
+                      <td style={{ 
+                        fontSize: '13px',
+                        padding: '16px 12px',
+                        borderLeft: `3px solid ${esDebito ? '#ff4d4d' : '#4dff4d'}`,
+                        borderTop: '1px solid #3a3a3a',
+                        borderBottom: '1px solid #3a3a3a'
+                      }}>
                         {new Date(mov.created_at).toLocaleString('es-AR', {
                           year: 'numeric',
                           month: '2-digit',
@@ -319,10 +363,19 @@ export default function CuentasMovimientos() {
                           minute: '2-digit'
                         })}
                       </td>
-                      <td style={{ fontWeight: '500' }}>
+                      <td style={{ 
+                        fontWeight: '500',
+                        padding: '16px 12px',
+                        borderTop: '1px solid #3a3a3a',
+                        borderBottom: '1px solid #3a3a3a'
+                      }}>
                         {mov.clientes?.nombre || '-'}
                       </td>
-                      <td>
+                      <td style={{
+                        padding: '16px 12px',
+                        borderTop: '1px solid #3a3a3a',
+                        borderBottom: '1px solid #3a3a3a'
+                      }}>
                         <span style={{
                           padding: '4px 10px',
                           borderRadius: '4px',
@@ -335,18 +388,31 @@ export default function CuentasMovimientos() {
                           {mov.tipo}
                         </span>
                       </td>
-                      <td style={{ fontSize: '14px', maxWidth: '300px' }}>
+                      <td style={{ 
+                        fontSize: '14px', 
+                        maxWidth: '300px',
+                        padding: '16px 12px',
+                        borderTop: '1px solid #3a3a3a',
+                        borderBottom: '1px solid #3a3a3a'
+                      }}>
                         {mov.descripcion || '-'}
                       </td>
                       <td style={{
                         textAlign: 'right',
                         fontWeight: 'bold',
                         fontSize: '16px',
-                        color: esDebito ? '#ff4d4d' : '#4dff4d'
+                        color: esDebito ? '#ff4d4d' : '#4dff4d',
+                        padding: '16px 12px',
+                        borderTop: '1px solid #3a3a3a',
+                        borderBottom: '1px solid #3a3a3a'
                       }}>
                         {esDebito ? '+' : '-'}${Math.abs(monto).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                       </td>
-                      <td>
+                      <td style={{
+                        padding: '16px 12px',
+                        borderTop: '1px solid #3a3a3a',
+                        borderBottom: '1px solid #3a3a3a'
+                      }}>
                         {tieneVenta ? (
                           <span style={{
                             padding: '3px 8px',
@@ -361,10 +427,20 @@ export default function CuentasMovimientos() {
                           <span style={{ color: '#666', fontSize: '13px' }}>Manual</span>
                         )}
                       </td>
-                      <td style={{ fontSize: '13px' }}>
+                      <td style={{ 
+                        fontSize: '13px',
+                        padding: '16px 12px',
+                        borderTop: '1px solid #3a3a3a',
+                        borderBottom: '1px solid #3a3a3a'
+                      }}>
                         {mov.created_by || '-'}
                       </td>
-                      <td>
+                      <td style={{
+                        padding: '16px 12px',
+                        borderTop: '1px solid #3a3a3a',
+                        borderBottom: '1px solid #3a3a3a',
+                        borderRight: '1px solid #3a3a3a'
+                      }}>
                         {!tieneVenta && (
                           <button
                             onClick={() => handleEliminarMovimiento(mov.id, tieneVenta)}

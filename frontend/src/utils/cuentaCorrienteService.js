@@ -36,7 +36,7 @@ export async function obtenerMovimientos(filtros = {}) {
         ventas:venta_id (
           id,
           numero_cotizacion,
-          total,
+          total_ars,
           estado
         )
       `)
@@ -62,6 +62,10 @@ export async function obtenerMovimientos(filtros = {}) {
     const { data, error } = await query;
 
     if (error) throw error;
+    
+    console.log('✅ obtenerMovimientos - Datos obtenidos:', data?.length || 0, 'movimientos');
+    console.log('Filtros aplicados:', filtros);
+    
     return { data, error: null };
   } catch (error) {
     console.error('Error obteniendo movimientos:', error);
